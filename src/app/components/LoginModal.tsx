@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useI18n } from "./I18nContext";
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToRegister: () => void;
 }
 
 function GoogleIcon() {
@@ -30,13 +31,23 @@ function GoogleIcon() {
   );
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
   const { t } = useI18n();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setEmail("");
+      setPassword("");
+      setErrors({});
+      setIsSubmitting(false);
+      setShowPassword(false);
     } else {
       document.body.style.overflow = "";
     }
@@ -46,6 +57,27 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      errs.email = t("loginEmailError");
+    if (!password.trim()) errs.password = t("loginPasswordError");
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleEmailLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
+    // Simulate email login
+    setTimeout(() => {
+      setIsSubmitting(false);
+      alert("Email login simulated for: " + email);
+      onClose();
+    }, 1000);
+  };
 
   return (
     <div
@@ -58,16 +90,17 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        style={{ animation: "fadeIn 0.3s ease" }}
+        style={{ animation: "loginFadeIn 0.3s ease" }}
       />
 
       {/* Modal */}
       <div
         className="relative rounded-2xl w-full max-w-md overflow-hidden"
         style={{
-          animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          animation: "loginSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
           background: "linear-gradient(145deg, #FDF9F4 0%, #FAF6F0 100%)",
-          boxShadow: "0 24px 80px rgba(139,94,60,0.12), 0 8px 24px rgba(139,94,60,0.06), 0 0 0 1px rgba(196,149,106,0.08)",
+          boxShadow:
+            "0 24px 80px rgba(139,94,60,0.12), 0 8px 24px rgba(139,94,60,0.06), 0 0 0 1px rgba(196,149,106,0.08)",
         }}
       >
         {/* Close button */}
@@ -83,53 +116,47 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div
           className="h-1.5"
           style={{
-            background: "linear-gradient(to right, rgba(160,113,74,0.3), #A0714A, #8B5E3C, #A0714A, rgba(160,113,74,0.3))",
+            background:
+              "linear-gradient(to right, rgba(160,113,74,0.3), #A0714A, #8B5E3C, #A0714A, rgba(160,113,74,0.3))",
           }}
         />
 
-        <div className="px-8 pt-10 pb-8 relative">
+        <div className="px-8 pt-8 pb-8 relative">
           {/* Warm corner glow */}
           <div
             className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
             style={{
-              background: "radial-gradient(circle, rgba(212,165,116,0.08) 0%, transparent 70%)",
+              background:
+                "radial-gradient(circle, rgba(212,165,116,0.08) 0%, transparent 70%)",
               filter: "blur(20px)",
             }}
             aria-hidden="true"
           />
 
           {/* Logo */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <p
               className="tracking-[0.3em] text-primary mb-3"
               style={{ fontSize: "0.7rem" }}
             >
               SCENEW
             </p>
-            <h2 style={{ fontSize: "1.5rem", lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: "1.35rem", lineHeight: 1.3 }}>
               {t("loginTitle")}
             </h2>
             <p
-              className="text-muted-foreground mt-3"
-              style={{ fontSize: "0.9rem", lineHeight: 1.6 }}
+              className="text-muted-foreground mt-2"
+              style={{ fontSize: "0.85rem", lineHeight: 1.6 }}
             >
               {t("loginSubtitle")}
             </p>
           </div>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border/60" />
-            </div>
-          </div>
-
           {/* Google login button */}
           <button
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-xl border border-border/80 bg-background hover:bg-muted/40 transition-all duration-300 hover:shadow-md hover:shadow-primary/[0.05] hover:border-primary/20 group"
-            style={{ fontSize: "0.95rem" }}
+            className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-xl border border-border/80 bg-background hover:bg-muted/40 transition-all duration-300 hover:shadow-md hover:shadow-primary/[0.05] hover:border-primary/20 group"
+            style={{ fontSize: "0.9rem" }}
             onClick={() => {
-              // Simulate Google login
               alert("Google OAuth redirect...");
               onClose();
             }}
@@ -140,10 +167,155 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </span>
           </button>
 
+          {/* Divider "or" */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center">
+              <span
+                className="px-3 text-muted-foreground/60"
+                style={{
+                  fontSize: "0.75rem",
+                  background: "linear-gradient(145deg, #FDF9F4 0%, #FAF6F0 100%)",
+                }}
+              >
+                {t("loginOr")}
+              </span>
+            </div>
+          </div>
+
+          {/* Email login form */}
+          <form onSubmit={handleEmailLogin} className="space-y-3.5">
+            <div>
+              <label
+                className="block mb-1.5 text-muted-foreground"
+                style={{ fontSize: "0.78rem", letterSpacing: "0.05em" }}
+              >
+                {t("loginEmailLabel")}
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                <input
+                  type="email"
+                  placeholder={t("loginEmailPlaceholder")}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors((p) => ({ ...p, email: "" }));
+                  }}
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 outline-none focus:ring-1 transition-all ${
+                    errors.email
+                      ? "ring-1 ring-red-300 bg-red-50/30"
+                      : "focus:ring-primary/25"
+                  }`}
+                  style={{
+                    fontSize: "0.88rem",
+                    background: errors.email ? undefined : "rgba(237,229,216,0.3)",
+                  }}
+                />
+              </div>
+              {errors.email && (
+                <p
+                  className="flex items-center gap-1 mt-1.5 text-red-400"
+                  style={{ fontSize: "0.72rem" }}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                className="block mb-1.5 text-muted-foreground"
+                style={{ fontSize: "0.78rem", letterSpacing: "0.05em" }}
+              >
+                {t("loginPasswordLabel")}
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("loginPasswordPlaceholder")}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors((p) => ({ ...p, password: "" }));
+                  }}
+                  className={`w-full pl-10 pr-10 py-3 rounded-xl border-0 outline-none focus:ring-1 transition-all ${
+                    errors.password
+                      ? "ring-1 ring-red-300 bg-red-50/30"
+                      : "focus:ring-primary/25"
+                  }`}
+                  style={{
+                    fontSize: "0.88rem",
+                    background: errors.password ? undefined : "rgba(237,229,216,0.3)",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p
+                  className="flex items-center gap-1 mt-1.5 text-red-400"
+                  style={{ fontSize: "0.72rem" }}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 rounded-xl text-primary-foreground transition-all duration-300 hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
+              style={{
+                fontSize: "0.9rem",
+                letterSpacing: "0.05em",
+                background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                boxShadow: "0 4px 16px rgba(139,94,60,0.2)",
+              }}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ...
+                </span>
+              ) : (
+                t("loginSubmit")
+              )}
+            </button>
+          </form>
+
+          {/* Switch to register */}
+          <p
+            className="text-center text-muted-foreground mt-4"
+            style={{ fontSize: "0.82rem" }}
+          >
+            {t("loginNoAccount")}{" "}
+            <button
+              onClick={onSwitchToRegister}
+              className="text-primary hover:underline underline-offset-2 transition-colors"
+            >
+              {t("loginRegisterLink")}
+            </button>
+          </p>
+
           {/* Terms */}
           <p
-            className="text-center text-muted-foreground/70 mt-6 px-4"
-            style={{ fontSize: "0.72rem", lineHeight: 1.6 }}
+            className="text-center text-muted-foreground/60 mt-4 px-4"
+            style={{ fontSize: "0.68rem", lineHeight: 1.6 }}
           >
             {t("loginTerms")}{" "}
             <a href="#" className="text-primary underline underline-offset-2">
@@ -159,11 +331,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
       {/* Animations */}
       <style>{`
-        @keyframes fadeIn {
+        @keyframes loginFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes slideUp {
+        @keyframes loginSlideUp {
           from { opacity: 0; transform: translateY(24px) scale(0.96); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }

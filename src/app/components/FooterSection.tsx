@@ -1,14 +1,16 @@
 import { Github, Twitter, Mail } from "lucide-react";
+import { useNavigate } from "react-router";
 import { useI18n } from "./I18nContext";
 
 export function FooterSection() {
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   const footerLinks = [
-    t("footerProduct"),
-    t("footerPricing"),
-    t("footerBlog"),
-    t("footerAbout"),
+    { label: t("footerProduct"), href: "#" },
+    { label: t("footerPricing"), href: "/pricing" },
+    { label: t("footerBlog"), href: "#" },
+    { label: t("footerAbout"), href: "#" },
   ];
 
   return (
@@ -66,12 +68,18 @@ export function FooterSection() {
             <nav className="flex gap-8" aria-label="Footer navigation">
               {footerLinks.map((item) => (
                 <a
-                  key={item}
-                  href="#"
+                  key={item.label}
+                  href={item.href}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   style={{ fontSize: "0.85rem" }}
+                  onClick={(e) => {
+                    if (item.href.startsWith("/")) {
+                      e.preventDefault();
+                      navigate(item.href);
+                    }
+                  }}
                 >
-                  {item}
+                  {item.label}
                 </a>
               ))}
             </nav>

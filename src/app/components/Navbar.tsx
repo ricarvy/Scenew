@@ -3,12 +3,14 @@ import { useNavigate, useLocation } from "react-router";
 import { Menu, X, ChevronDown, Globe } from "lucide-react";
 import { useI18n, Lang } from "./I18nContext";
 import { LoginModal } from "./LoginModal";
+import { RegisterModal } from "./RegisterModal";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
   const { lang, setLang, t } = useI18n();
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ export function Navbar() {
     { label: t("navHow"), href: "#how-it-works" },
     { label: t("navShowcase"), href: "#showcase" },
     { label: t("navFeatures"), href: "#features" },
+    { label: t("navPricing"), href: "/pricing" },
     { label: t("navTry"), href: "/try" },
   ];
 
@@ -46,6 +49,17 @@ export function Navbar() {
   const switchLang = (code: Lang) => {
     setLang(code);
     setLangOpen(false);
+  };
+
+  const handleSwitchToRegister = () => {
+    setLoginOpen(false);
+    // Small delay so the close animation finishes before opening the new one
+    setTimeout(() => setRegisterOpen(true), 150);
+  };
+
+  const handleSwitchToLogin = () => {
+    setRegisterOpen(false);
+    setTimeout(() => setLoginOpen(true), 150);
   };
 
   return (
@@ -123,7 +137,7 @@ export function Navbar() {
               {langOpen && (
                 <div
                   className="absolute top-full right-0 mt-2 bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-lg shadow-black/8 overflow-hidden min-w-[140px]"
-                  style={{ animation: "dropIn 0.2s ease" }}
+                  style={{ animation: "navDropIn 0.2s ease" }}
                 >
                   {langOptions.map((opt) => (
                     <button
@@ -238,10 +252,19 @@ export function Navbar() {
         )}
       </nav>
 
-      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSwitchToRegister={handleSwitchToRegister}
+      />
+      <RegisterModal
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSwitchToLogin={handleSwitchToLogin}
+      />
 
       <style>{`
-        @keyframes dropIn {
+        @keyframes navDropIn {
           from { opacity: 0; transform: translateY(-6px); }
           to { opacity: 1; transform: translateY(0); }
         }
