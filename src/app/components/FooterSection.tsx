@@ -65,7 +65,7 @@ export function FooterSection() {
               </p>
             </div>
 
-            <nav className="flex gap-8" aria-label="Footer navigation">
+            <nav className="flex flex-wrap justify-center md:justify-start gap-4 sm:gap-8" aria-label="Footer navigation">
               {footerLinks.map((item) => (
                 <a
                   key={item.label}

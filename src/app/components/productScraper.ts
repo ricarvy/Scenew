@@ -40,13 +40,17 @@ export class ScraperError extends Error {
 
 /**
  * Extract product info from a URL.
+ * Optionally pass cookies from a previous login session.
  * Throws NeedLoginError (401) if platform login is required.
  */
-export async function extractProduct(url: string): Promise<ProductInfo> {
+export async function extractProduct(url: string, cookies?: string): Promise<ProductInfo> {
+  const body: Record<string, string> = { url };
+  if (cookies) body.cookies = cookies;
+
   const res = await fetch(`${API_BASE}/api/extract`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify(body),
   });
 
   if (res.status === 401) {

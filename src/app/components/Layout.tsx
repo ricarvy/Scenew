@@ -6,7 +6,7 @@ import { NoiseOverlay } from "./WarmGlow";
 
 export function Layout() {
   return (
-    <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="relative min-h-screen bg-background text-foreground overflow-x-hidden overflow-y-auto w-full max-w-full">
       <NoiseOverlay />
       <ParticleBackground />
       <Navbar />

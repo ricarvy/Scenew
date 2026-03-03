@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, Loader2, Monitor, CheckCircle2 } from "lucide-react";
+import { X, Loader2, Monitor, CheckCircle2, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useI18n } from "./I18nContext";
 import { startLoginSession, confirmLogin, type ProductInfo } from "./productScraper";
 
@@ -30,6 +30,7 @@ export function BrowserLoginModal({
   const [confirming, setConfirming] = useState(false);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
   // Canvas dimensions for screencast
   const CANVAS_WIDTH = 800;
@@ -48,6 +49,7 @@ export function BrowserLoginModal({
     setLoading(true);
     setError("");
     setConfirming(false);
+    setRetryCount(0);
   }, []);
 
   useEffect(() => {
@@ -147,7 +149,7 @@ export function BrowserLoginModal({
         }
       }
     };
-  }, [isOpen, taskId]);
+  }, [isOpen, taskId, retryCount]);
 
   useEffect(() => {
     if (isOpen) {
@@ -298,8 +300,22 @@ export function BrowserLoginModal({
               <Monitor className="w-4 h-4" style={{ color: "#A0714A" }} />
             </div>
             <div>
-              <h3 style={{ fontSize: "0.95rem", color: "#5C3D24" }}>
+              <h3 className="flex items-center gap-2" style={{ fontSize: "0.95rem", color: "#5C3D24" }}>
                 {t("browserLoginTitle")}
+                {/* Connection status badge */}
+                {!loading && !error && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+                    style={{
+                      fontSize: "0.6rem",
+                      color: connected ? "#16a34a" : "#d97706",
+                      background: connected ? "rgba(22,163,74,0.08)" : "rgba(217,119,6,0.08)",
+                    }}
+                  >
+                    {connected ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
+                    {connected ? (t("browserLoginTitle") === "需要平台登录" ? "已连接" : "Connected") : (t("browserLoginTitle") === "需要平台登录" ? "已断开" : "Disconnected")}
+                  </span>
+                )}
               </h3>
               <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>
                 {t("browserLoginDesc")}
@@ -340,6 +356,19 @@ export function BrowserLoginModal({
               <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
                 {error}
               </p>
+              <button
+                onClick={() => setRetryCount((c) => c + 1)}
+                className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                style={{
+                  fontSize: "0.8rem",
+                  color: "#A0714A",
+                  background: "rgba(160,113,74,0.08)",
+                  border: "1px solid rgba(160,113,74,0.15)",
+                }}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {t("browserLoginTitle") === "需要平台登录" ? "重试连接" : "Retry Connection"}
+              </button>
             </div>
           ) : (
             <canvas

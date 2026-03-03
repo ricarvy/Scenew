@@ -95,7 +95,7 @@ export function Navbar() {
           </a>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden md:flex items-center gap-4 lg:gap-7 flex-shrink min-w-0">
             {navItems.map((item) => (
               <a
                 key={item.href}

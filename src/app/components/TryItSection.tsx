@@ -33,7 +33,63 @@ import { BrowserLoginModal } from "./BrowserLoginModal";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MOCK_RESULTS = [
+// ── API Configuration ────────────────────────────────────────
+const API_BASE_URL = "http://120.76.142.91:8910";
+
+interface GenerateRequest {
+  photo: File;
+  productLinks: { url: string; product?: ProductInfo }[];
+  sceneDescription: string;
+}
+
+interface GenerateResult {
+  src: string;
+  labelZh: string;
+  labelEn: string;
+}
+
+/**
+ * Call the scene generation backend API.
+ * TODO: Replace mock implementation with real API call once the endpoint is ready.
+ *
+ * Expected real API:
+ *   POST {API_BASE_URL}/api/generate
+ *   Content-Type: multipart/form-data
+ *   Body: { photo: File, links: string[], scene: string }
+ *   Response: { images: [{ url: string, label_zh: string, label_en: string }] }
+ */
+async function generateSceneImages(
+  _request: GenerateRequest
+): Promise<GenerateResult[]> {
+  // ── TODO: Uncomment and adapt when the real backend is available ──
+  // const formData = new FormData();
+  // formData.append("photo", request.photo);
+  // formData.append("links", JSON.stringify(request.productLinks.map(l => l.url)));
+  // formData.append("scene", request.sceneDescription);
+  //
+  // const res = await fetch(`${API_BASE_URL}/api/generate`, {
+  //   method: "POST",
+  //   body: formData,
+  // });
+  //
+  // if (!res.ok) {
+  //   const errBody = await res.json().catch(() => ({}));
+  //   throw new Error(errBody.message || `Generate failed (${res.status})`);
+  // }
+  //
+  // const data = await res.json();
+  // return data.images.map((img: any) => ({
+  //   src: img.url,
+  //   labelZh: img.label_zh || "",
+  //   labelEn: img.label_en || "",
+  // }));
+
+  // ── Mock: simulate 2.5s network delay then return example images ──
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+  return MOCK_RESULTS;
+}
+
+const MOCK_RESULTS: GenerateResult[] = [
   {
     src: "https://images.unsplash.com/photo-1619678681136-669acf3b3477?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwbW9kZWwlMjBzdHJlZXQlMjBzdHlsZSUyMHVyYmFufGVufDF8fHx8MTc3MjI0NjY4OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
     labelZh: "都市街拍",
@@ -124,7 +180,7 @@ function ProductCard({
         boxShadow: "0 2px 12px rgba(139,94,60,0.04)",
       }}
     >
-      <div className="flex items-start gap-3 p-3">
+      <div className="flex items-start gap-3 p-3 min-w-0">
         {/* Product thumbnail or platform badge */}
         {item.status === "success" && item.product?.image ? (
           <div
@@ -147,7 +203,7 @@ function ProductCard({
           </div>
         )}
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           {/* Platform tag */}
           <div className="flex items-center gap-1.5 mb-1">
             <PlatformBadge platform={item.platform} />
@@ -220,11 +276,11 @@ function ProductCard({
 
           {/* URL preview */}
           <p
-            className="text-muted-foreground/40 truncate mt-0.5 flex items-center gap-1"
+            className="text-muted-foreground/40 mt-0.5 truncate"
             style={{ fontSize: "0.65rem" }}
           >
-            <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
-            {item.url}
+            <ExternalLink className="w-2.5 h-2.5 inline-block flex-shrink-0 mr-1 align-middle" />
+            <span className="align-middle">{item.url}</span>
           </p>
         </div>
 
@@ -254,22 +310,32 @@ function ProductCard({
   );
 }
 
-// ── Main Component ───────────────────────────��───────────────
+// ── Main Component ──────────────────────────────────────────
 export function TryItSection() {
   const { t, lang } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const sceneImageInputRef = useRef<HTMLInputElement>(null);
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [productLinks, setProductLinks] = useState<ProductLinkItem[]>([]);
   const [linkInput, setLinkInput] = useState("");
   const [sceneDesc, setSceneDesc] = useState("");
+  const [sceneImageFile, setSceneImageFile] = useState<File | null>(null);
+  const [sceneImagePreview, setSceneImagePreview] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [errors, setErrors] = useState<{ photo?: string; link?: string }>({});
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
+  const [generatedResults, setGeneratedResults] = useState<
+    { src: string; labelZh: string; labelEn: string }[]
+  >([]);
+  const [generateError, setGenerateError] = useState<string>("");
+
+  // Creative mode tab state
+  const [creativeMode, setCreativeMode] = useState<"copy" | "inspire">("copy");
 
   // Browser login modal state
   const [browserLoginOpen, setBrowserLoginOpen] = useState(false);
@@ -311,6 +377,22 @@ export function TryItSection() {
     setPhotoFile(null);
     setPhotoPreview("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // ── Scene image handling (inspire mode) ────────────────
+  const handleSceneImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSceneImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setSceneImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const removeSceneImage = () => {
+    setSceneImageFile(null);
+    setSceneImagePreview("");
+    if (sceneImageInputRef.current) sceneImageInputRef.current.value = "";
   };
 
   // ── Product link handling ──────────────────────────────
@@ -448,10 +530,22 @@ export function TryItSection() {
     setIsGenerating(true);
     setGenerated(false);
     setSelectedResult(null);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setGenerated(true);
-    }, 3000);
+    setGenerateError("");
+    const request: GenerateRequest = {
+      photo: photoFile!,
+      productLinks: productLinks.map((link) => ({ url: link.url, product: link.product })),
+      sceneDescription: sceneDesc,
+    };
+    generateSceneImages(request)
+      .then((results) => {
+        setIsGenerating(false);
+        setGenerated(true);
+        setGeneratedResults(results);
+      })
+      .catch((err) => {
+        setIsGenerating(false);
+        setGenerateError(err.message || "生成失败");
+      });
   };
 
   const handleRegenerate = () => {
@@ -492,10 +586,10 @@ export function TryItSection() {
           />
         </div>
 
-        <div className={`grid gap-12 items-start ${isGenerating || generated ? 'grid-cols-1 lg:grid-cols-2' : 'max-w-2xl mx-auto'}`}>
+        <div className={`grid gap-12 items-start ${isGenerating || generated || generateError ? 'grid-cols-1 lg:grid-cols-2' : 'max-w-2xl mx-auto'}`}>
           {/* ── Form Panel ── */}
           <div
-            className="try-form space-y-6 p-8 rounded-2xl relative"
+            className="try-form space-y-6 p-4 sm:p-8 rounded-2xl relative min-w-0"
             style={{
               background: "linear-gradient(145deg, rgba(253,249,244,0.6) 0%, rgba(250,246,240,0.4) 100%)",
               border: "1px solid rgba(196,149,106,0.08)",
@@ -510,6 +604,46 @@ export function TryItSection() {
               }}
               aria-hidden="true"
             />
+
+            {/* ── Creative Mode Tabs ── */}
+            <div>
+              <div
+                className="flex rounded-xl p-1 relative"
+                style={{ background: "rgba(237,229,216,0.4)", border: "1px solid rgba(196,149,106,0.08)" }}
+              >
+                {(["copy", "inspire"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setCreativeMode(mode)}
+                    className="flex-1 relative z-10 py-2.5 rounded-lg transition-all duration-300"
+                    style={{
+                      fontSize: "0.85rem",
+                      letterSpacing: "0.05em",
+                      color: creativeMode === mode ? "#5C3D24" : "rgba(139,94,60,0.5)",
+                      background: creativeMode === mode
+                        ? "linear-gradient(145deg, rgba(255,252,248,0.95) 0%, rgba(253,249,244,0.9) 100%)"
+                        : "transparent",
+                      boxShadow: creativeMode === mode
+                        ? "0 2px 8px rgba(139,94,60,0.08), 0 0 0 1px rgba(196,149,106,0.1)"
+                        : "none",
+                    }}
+                  >
+                    {t(mode === "copy" ? "tryTabCopy" : "tryTabInspire")}
+                  </button>
+                ))}
+              </div>
+              {/* Tab slogan with typewriter effect */}
+              <div className="mt-3 text-center min-h-[1.8rem]">
+                <TypewriterText
+                  key={`tab-slogan-${creativeMode}-${lang}`}
+                  text={t(creativeMode === "copy" ? "trySloganCopy" : "trySloganInspire")}
+                  as="p"
+                  typeSpeed={40}
+                  className="text-muted-foreground/70"
+                  style={{ fontSize: "0.78rem", lineHeight: 1.6 }}
+                />
+              </div>
+            </div>
 
             {/* ── Photo upload ── */}
             <div>
@@ -527,29 +661,39 @@ export function TryItSection() {
               >
                 {photoPreview ? (
                   <div className="relative p-3">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="truncate" style={{ fontSize: "0.85rem" }}>{photoFile?.name}</p>
-                        <p className="text-primary mt-0.5" style={{ fontSize: "0.72rem" }}>{t("tryPhotoUploaded")}</p>
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
+                    {/* Full-width image preview */}
+                    <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: "45vh" }}>
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-full h-full object-contain rounded-xl"
+                        style={{ maxHeight: "45vh" }}
+                      />
+                      {/* Floating action buttons */}
+                      <div className="absolute top-2.5 right-2.5 flex gap-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                          className="text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1 rounded-lg"
-                          style={{ fontSize: "0.72rem", background: "rgba(237,229,216,0.5)" }}
+                          className="backdrop-blur-md text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                          style={{ fontSize: "0.72rem", background: "rgba(44,31,20,0.45)" }}
                         >
+                          <Upload className="w-3 h-3" />
                           {t("tryPhotoChange")}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                          className="text-muted-foreground hover:text-red-400 transition-colors p-1 rounded-lg"
-                          style={{ background: "rgba(237,229,216,0.5)" }}
+                          className="backdrop-blur-md text-white/90 hover:text-red-300 transition-all p-1.5 rounded-lg"
+                          style={{ background: "rgba(44,31,20,0.45)" }}
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+                      {/* Uploaded badge */}
+                      <div
+                        className="absolute bottom-2.5 left-2.5 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                        style={{ background: "rgba(44,31,20,0.4)" }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="text-white/90" style={{ fontSize: "0.68rem" }}>{t("tryPhotoUploaded")}</span>
                       </div>
                     </div>
                   </div>
@@ -672,6 +816,82 @@ export function TryItSection() {
               )}
             </div>
 
+            {/* ── Scene Reference Image (inspire mode only) ── */}
+            {creativeMode === "inspire" && (
+              <div>
+                <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
+                  <span className="flex items-center gap-2">
+                    <ImagePlus className="w-3.5 h-3.5" />
+                    {t("trySceneImageLabel")}
+                    <span className="text-muted-foreground/50" style={{ fontSize: "0.72rem", letterSpacing: "0.02em" }}>
+                      {t("trySceneImageOptional")}
+                    </span>
+                  </span>
+                </label>
+                <input
+                  ref={sceneImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  className="hidden"
+                  onChange={handleSceneImageSelect}
+                />
+                <div
+                  className="border border-dashed rounded-xl text-center cursor-pointer transition-all duration-300 group border-primary/15 hover:border-primary/30"
+                  style={{ background: "rgba(237,229,216,0.2)" }}
+                  onClick={() => !sceneImagePreview && sceneImageInputRef.current?.click()}
+                >
+                  {sceneImagePreview ? (
+                    <div className="relative p-3">
+                      <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: "28vh" }}>
+                        <img
+                          src={sceneImagePreview}
+                          alt="Scene reference"
+                          className="w-full h-full object-contain rounded-xl"
+                          style={{ maxHeight: "28vh" }}
+                        />
+                        {/* Floating action buttons */}
+                        <div className="absolute top-2.5 right-2.5 flex gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); sceneImageInputRef.current?.click(); }}
+                            className="backdrop-blur-md text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                            style={{ fontSize: "0.72rem", background: "rgba(44,31,20,0.45)" }}
+                          >
+                            <Upload className="w-3 h-3" />
+                            {t("trySceneImageChange")}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeSceneImage(); }}
+                            className="backdrop-blur-md text-white/90 hover:text-red-300 transition-all p-1.5 rounded-lg"
+                            style={{ background: "rgba(44,31,20,0.45)" }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {/* Uploaded badge */}
+                        <div
+                          className="absolute bottom-2.5 left-2.5 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                          style={{ background: "rgba(44,31,20,0.4)" }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="text-white/90" style={{ fontSize: "0.68rem" }}>{t("trySceneImageUploaded")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-6 px-4">
+                      <ImagePlus className="w-5 h-5 mx-auto mb-2.5 text-muted-foreground/40 group-hover:text-primary/60 transition-colors duration-300" />
+                      <p className="text-muted-foreground/60" style={{ fontSize: "0.8rem" }}>
+                        {t("trySceneImageUpload")}
+                      </p>
+                      <p className="text-muted-foreground/35 mt-1" style={{ fontSize: "0.7rem" }}>
+                        {t("trySceneImageFormat")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* ── Scene description ── */}
             <div>
               <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
@@ -743,9 +963,44 @@ export function TryItSection() {
           </div>
 
           {/* ── Preview Panel ── */}
-          {(isGenerating || generated) && (
-          <div className="try-preview">
-            {generated ? (
+          {(isGenerating || generated || generateError) && (
+          <div className="try-preview min-w-0">
+            {generateError ? (
+              <div
+                className="rounded-2xl overflow-hidden relative p-8"
+                style={{
+                  background: "linear-gradient(145deg, rgba(237,229,216,0.3) 0%, rgba(232,221,208,0.2) 100%)",
+                  boxShadow: "0 4px 24px rgba(139,94,60,0.06)",
+                }}
+              >
+                <div className="flex flex-col items-center justify-center text-center py-8">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+                    style={{ background: "rgba(192,57,43,0.08)" }}
+                  >
+                    <AlertCircle className="w-6 h-6" style={{ color: "#c0392b" }} />
+                  </div>
+                  <p style={{ fontSize: "0.9rem", color: "#5C3D24" }}>
+                    {lang === "zh" ? "生成失败" : "Generation Failed"}
+                  </p>
+                  <p className="text-muted-foreground mt-2 max-w-xs" style={{ fontSize: "0.75rem" }}>
+                    {generateError}
+                  </p>
+                  <button
+                    onClick={handleGenerate}
+                    className="mt-5 flex items-center gap-1.5 px-5 py-2 rounded-xl text-primary-foreground transition-all hover:opacity-90"
+                    style={{
+                      fontSize: "0.8rem",
+                      background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                      boxShadow: "0 2px 8px rgba(139,94,60,0.15)",
+                    }}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    {lang === "zh" ? "重试" : "Retry"}
+                  </button>
+                </div>
+              </div>
+            ) : generated ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="flex items-center gap-2" style={{ fontSize: "0.85rem", color: "#5C3D24" }}>
@@ -763,7 +1018,7 @@ export function TryItSection() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {MOCK_RESULTS.map((item, idx) => (
+                  {generatedResults.map((item, idx) => (
                     <div
                       key={idx}
                       className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300"

@@ -32,7 +32,7 @@ export function PricingPage() {
     : t("pricingProPeriodMonthly");
 
   return (
-    <section className="relative min-h-screen pt-32 pb-24 px-6">
+    <section className="relative min-h-screen pt-32 pb-24 px-6 overflow-hidden">
       {/* Back button */}
       <div className="max-w-5xl mx-auto mb-10">
         <button
@@ -46,7 +46,7 @@ export function PricingPage() {
       </div>
 
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto mb-14">
+      <div className="text-center max-w-2xl mx-auto mb-14 overflow-hidden">
         <span
           className="inline-block tracking-[0.2em] mb-4"
           style={{
@@ -61,7 +61,7 @@ export function PricingPage() {
           {t("pricingTag")}
         </span>
         <h1
-          className="mb-4"
+          className="mb-4 break-words"
           style={{
             background: "linear-gradient(135deg, #5C3D24 0%, #8B5E3C 50%, #A0714A 100%)",
             WebkitBackgroundClip: "text",

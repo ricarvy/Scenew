@@ -81,7 +81,7 @@ export function TypewriterText({
   }, [text]);
 
   return (
-    <Tag className={className} style={style}>
+    <Tag className={`${className} overflow-hidden break-words`} style={style}>
       <span ref={elRef as any} />
     </Tag>
   );
