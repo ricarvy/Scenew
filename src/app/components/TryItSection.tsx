@@ -254,7 +254,7 @@ function ProductCard({
   );
 }
 
-// ── Main Component ───────────────────────────────────────────
+// ── Main Component ───────────────────────────��───────────────
 export function TryItSection() {
   const { t, lang } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
@@ -492,7 +492,7 @@ export function TryItSection() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div className={`grid gap-12 items-start ${isGenerating || generated ? 'grid-cols-1 lg:grid-cols-2' : 'max-w-2xl mx-auto'}`}>
           {/* ── Form Panel ── */}
           <div
             className="try-form space-y-6 p-8 rounded-2xl relative"
@@ -743,6 +743,7 @@ export function TryItSection() {
           </div>
 
           {/* ── Preview Panel ── */}
+          {(isGenerating || generated) && (
           <div className="try-preview">
             {generated ? (
               <div className="space-y-4">
@@ -874,6 +875,7 @@ export function TryItSection() {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 
