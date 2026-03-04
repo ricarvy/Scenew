@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ShoppingBag,
   Package,
+  Copy,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useI18n } from "./I18nContext";
@@ -31,86 +32,87 @@ import {
 } from "./productScraper";
 import { BrowserLoginModal } from "./BrowserLoginModal";
 
+// Swiper
+import { Swiper, SwiperSlide } from "swiper/react";
+import { EffectCards } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/effect-cards";
+import { toast } from "sonner";
+import mediumZoom from "medium-zoom";
+
 gsap.registerPlugin(ScrollTrigger);
 
 // ── API Configuration ────────────────────────────────────────
-const API_BASE_URL = "http://120.76.142.91:8910";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
 
 interface GenerateRequest {
   photo: File;
-  productLinks: { url: string; product?: ProductInfo }[];
+  productLinks: { url: string; product?: ProductInfo; selectedImageIndex?: number }[];
   sceneDescription: string;
+  creativeMode?: "copy" | "inspire";
+  sceneImage?: File;
 }
 
 interface GenerateResult {
   src: string;
   labelZh: string;
   labelEn: string;
+  generatedCopy?: string;
 }
 
 /**
  * Call the scene generation backend API.
- * TODO: Replace mock implementation with real API call once the endpoint is ready.
- *
- * Expected real API:
- *   POST {API_BASE_URL}/api/generate
- *   Content-Type: multipart/form-data
- *   Body: { photo: File, links: string[], scene: string }
- *   Response: { images: [{ url: string, label_zh: string, label_en: string }] }
  */
 async function generateSceneImages(
-  _request: GenerateRequest
+  request: GenerateRequest
 ): Promise<GenerateResult[]> {
-  // ── TODO: Uncomment and adapt when the real backend is available ──
-  // const formData = new FormData();
-  // formData.append("photo", request.photo);
-  // formData.append("links", JSON.stringify(request.productLinks.map(l => l.url)));
-  // formData.append("scene", request.sceneDescription);
-  //
-  // const res = await fetch(`${API_BASE_URL}/api/generate`, {
-  //   method: "POST",
-  //   body: formData,
-  // });
-  //
-  // if (!res.ok) {
-  //   const errBody = await res.json().catch(() => ({}));
-  //   throw new Error(errBody.message || `Generate failed (${res.status})`);
-  // }
-  //
-  // const data = await res.json();
-  // return data.images.map((img: any) => ({
-  //   src: img.url,
-  //   labelZh: img.label_zh || "",
-  //   labelEn: img.label_en || "",
-  // }));
+  const formData = new FormData();
+  formData.append("photo", request.photo);
+  
+  // Format links with selected image index
+  const formattedLinks = request.productLinks.map(l => {
+    // Logic must match ProductCard display logic to ensure WYSIWYG
+    const images = l.product?.images && l.product.images.length > 0 
+      ? l.product.images 
+      : l.product?.image ? [l.product.image] : [];
+      
+    return {
+      url: l.url,
+      selected_image: images[l.selectedImageIndex || 0] || l.product?.image
+    };
+  });
+  
+  formData.append("links", JSON.stringify(formattedLinks));
+  formData.append("scene", request.sceneDescription);
+  formData.append("mode", request.creativeMode || "copy");
+  
+  if (request.sceneImage) {
+    formData.append("scene_image", request.sceneImage);
+  }
 
-  // ── Mock: simulate 2.5s network delay then return example images ──
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  return MOCK_RESULTS;
+  const res = await fetch(`${API_BASE_URL}/api/generate`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.message || `Generate failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  
+  // Ensure full URL for generated images
+  const ensureUrl = (url: string) => 
+    url.startsWith("http") ? url : `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+
+  return (data.result_image_urls || []).map((url: string) => ({
+    src: ensureUrl(url),
+    labelZh: "生成结果",
+    labelEn: "Generated Result",
+    generatedCopy: data.generated_copy
+  }));
 }
-
-const MOCK_RESULTS: GenerateResult[] = [
-  {
-    src: "https://images.unsplash.com/photo-1619678681136-669acf3b3477?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwbW9kZWwlMjBzdHJlZXQlMjBzdHlsZSUyMHVyYmFufGVufDF8fHx8MTc3MjI0NjY4OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    labelZh: "都市街拍",
-    labelEn: "Urban Street",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1759960034444-99fc2da398bc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBjb3p5JTIwY2FmZSUyMGludGVyaW9yJTIwbGlmZXN0eWxlfGVufDF8fHx8MTc3MjI0NjY4OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    labelZh: "咖啡时光",
-    labelEn: "Cafe Moment",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1760264549505-df14579996df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGF1dHVtbiUyMHBhcmslMjB3YWxraW5nJTIwb3V0Zml0fGVufDF8fHx8MTc3MjI0NjY5MHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    labelZh: "秋日漫步",
-    labelEn: "Autumn Walk",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1736939666660-d4c776e0532c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBtb2Rlcm4lMjBvZmZpY2UlMjBwcm9mZXNzaW9uYWwlMjBvdXRmaXR8ZW58MXx8fHwxNzcyMjQ2NjkwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    labelZh: "职场风范",
-    labelEn: "Office Style",
-  },
-];
 
 // ── Product Link Item ────────────────────────────────────────
 export interface ProductLinkItem {
@@ -119,6 +121,7 @@ export interface ProductLinkItem {
   platform: PlatformInfo;
   status: "fetching" | "success" | "error" | "need_login";
   product?: ProductInfo;
+  selectedImageIndex?: number;
   taskId?: string;
   error?: string;
 }
@@ -164,13 +167,21 @@ function ProductCard({
   item,
   onRemove,
   onRetry,
+  onSelectImage,
   t,
 }: {
   item: ProductLinkItem;
   onRemove: () => void;
   onRetry: () => void;
+  onSelectImage?: (index: number) => void;
   t: (k: any) => string;
 }) {
+  const images = item.product?.images && item.product.images.length > 0 
+    ? item.product.images 
+    : item.product?.image ? [item.product.image] : [];
+  
+  const selectedImage = images[item.selectedImageIndex || 0] || item.product?.image;
+
   return (
     <div
       className="relative group rounded-xl overflow-hidden transition-all duration-300"
@@ -182,16 +193,18 @@ function ProductCard({
     >
       <div className="flex items-start gap-3 p-3 min-w-0">
         {/* Product thumbnail or platform badge */}
-        {item.status === "success" && item.product?.image ? (
-          <div
-            className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0"
-            style={{ border: "1px solid rgba(196,149,106,0.1)" }}
-          >
-            <ImageWithFallback
-              src={item.product.image}
-              alt={item.product.title || "Product"}
-              className="w-full h-full object-cover"
-            />
+        {item.status === "success" && selectedImage ? (
+          <div className="flex flex-col gap-2 flex-shrink-0">
+            <div
+              className="w-14 h-14 rounded-lg overflow-hidden"
+              style={{ border: "1px solid rgba(196,149,106,0.1)" }}
+            >
+              <ImageWithFallback
+                src={selectedImage}
+                alt={item.product?.title || "Product"}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         ) : (
           <div className="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: item.platform.bgColor }}>
@@ -208,7 +221,7 @@ function ProductCard({
           <div className="flex items-center gap-1.5 mb-1">
             <PlatformBadge platform={item.platform} />
             <span style={{ fontSize: "0.72rem", color: item.platform.color, fontWeight: 500 }}>
-              {item.platform.name}
+              {item.product?.shop_name || item.platform.name}
             </span>
             {/* "Link added" badge for error/need_login states */}
             {(item.status === "error" || item.status === "need_login") && (
@@ -227,12 +240,43 @@ function ProductCard({
 
           {/* Title or status */}
           {item.status === "success" && item.product?.title ? (
-            <p
-              className="text-foreground/90 line-clamp-2"
-              style={{ fontSize: "0.78rem", lineHeight: 1.5 }}
-            >
-              {item.product.title}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <p
+                className="text-foreground/90 line-clamp-2"
+                style={{ fontSize: "0.78rem", lineHeight: 1.5 }}
+              >
+                {item.product.title}
+              </p>
+              {item.product.price && (
+                <p className="font-semibold text-right" style={{ fontSize: "0.75rem", color: "#A0714A" }}>
+                  <span className="mr-0.5 text-[0.7em] opacity-80">{item.product.currency || "¥"}</span>
+                  {item.product.price}
+                </p>
+              )}
+              {/* Image selector thumbnails if multiple images exist */}
+              {images.length > 1 && (
+                <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1 no-scrollbar">
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onSelectImage?.(idx)}
+                      className={`relative w-8 h-8 rounded-md overflow-hidden flex-shrink-0 transition-all ${
+                        (item.selectedImageIndex || 0) === idx 
+                          ? "ring-2 ring-[#A0714A] ring-offset-1" 
+                          : "opacity-70 hover:opacity-100"
+                      }`}
+                      style={{ border: "1px solid rgba(160,113,74,0.1)" }}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`View ${idx + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : item.status === "fetching" ? (
             <p className="text-muted-foreground/60" style={{ fontSize: "0.75rem" }}>
               {t("tryLinkFetching")}
@@ -330,7 +374,7 @@ export function TryItSection() {
   const [errors, setErrors] = useState<{ photo?: string; link?: string }>({});
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
   const [generatedResults, setGeneratedResults] = useState<
-    { src: string; labelZh: string; labelEn: string }[]
+    { src: string; labelZh: string; labelEn: string; generatedCopy?: string }[]
   >([]);
   const [generateError, setGenerateError] = useState<string>("");
 
@@ -341,6 +385,7 @@ export function TryItSection() {
   const [browserLoginOpen, setBrowserLoginOpen] = useState(false);
   const [browserLoginTaskId, setBrowserLoginTaskId] = useState("");
   const [browserLoginLinkId, setBrowserLoginLinkId] = useState("");
+  const zoomRef = useRef<ReturnType<typeof mediumZoom> | null>(null);
 
   // GSAP animations
   useEffect(() => {
@@ -533,8 +578,14 @@ export function TryItSection() {
     setGenerateError("");
     const request: GenerateRequest = {
       photo: photoFile!,
-      productLinks: productLinks.map((link) => ({ url: link.url, product: link.product })),
+      productLinks: productLinks.map((link) => ({ 
+        url: link.url, 
+        product: link.product,
+        selectedImageIndex: link.selectedImageIndex 
+      })),
       sceneDescription: sceneDesc,
+      creativeMode: creativeMode,
+      sceneImage: sceneImageFile || undefined,
     };
     generateSceneImages(request)
       .then((results) => {
@@ -553,6 +604,43 @@ export function TryItSection() {
     setSelectedResult(null);
     handleGenerate();
   };
+  
+  const downloadImage = async (url: string) => {
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const filename = url.split("/").pop() || "image.jpg";
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+    }
+  };
+  
+  const copyImageLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(lang === "zh" ? "已经复制到剪贴板" : "Copied to clipboard");
+    } catch {
+      const input = document.createElement("input");
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      toast.success(lang === "zh" ? "已经复制到剪贴板" : "Copied to clipboard");
+    }
+  };
 
   const sceneSuggestions = [
     t("trySceneSuggest1"),
@@ -562,6 +650,15 @@ export function TryItSection() {
     t("trySceneSuggest5"),
     t("trySceneSuggest6"),
   ];
+  
+  useEffect(() => {
+    if (!generated) return;
+    const imgs = document.querySelectorAll<HTMLImageElement>(".generated-zoomable");
+    if (!zoomRef.current) {
+      zoomRef.current = mediumZoom({ margin: 24, background: "rgba(0,0,0,0.85)", scrollOffset: 40 });
+    }
+    zoomRef.current.attach(imgs);
+  }, [generated, generatedResults]);
 
   return (
     <section
@@ -798,6 +895,13 @@ export function TryItSection() {
                       item={item}
                       onRemove={() => removeLink(item.id)}
                       onRetry={() => retryLink(item.id)}
+                      onSelectImage={(index) => {
+                        setProductLinks((prev) =>
+                          prev.map((p) =>
+                            p.id === item.id ? { ...p, selectedImageIndex: index } : p
+                          )
+                        );
+                      }}
                       t={t}
                     />
                   ))}
@@ -1017,66 +1121,105 @@ export function TryItSection() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {generatedResults.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300"
-                      style={{
-                        aspectRatio: "3/4",
-                        boxShadow:
-                          selectedResult === idx
-                            ? "0 0 0 2px #A0714A, 0 8px 32px rgba(139,94,60,0.18)"
-                            : "0 4px 16px rgba(139,94,60,0.06)",
-                      }}
-                      onClick={() => setSelectedResult(idx)}
-                    >
-                      <ImageWithFallback
-                        src={item.src}
-                        alt={`Scene ${idx + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ background: "linear-gradient(to top, rgba(44,31,20,0.55) 0%, transparent 50%)" }}
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <p className="text-white/90" style={{ fontSize: "0.75rem" }}>
-                          {lang === "zh" ? item.labelZh : item.labelEn}
-                        </p>
-                      </div>
-                      {selectedResult === idx && (
-                        <div className="absolute top-2 right-2 flex gap-1.5">
-                          <button
-                            className="w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors hover:bg-white/30"
-                            style={{ background: "rgba(255,255,255,0.2)" }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Download className="w-3.5 h-3.5 text-white" />
-                          </button>
-                          <button
-                            className="w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors hover:bg-white/30"
-                            style={{ background: "rgba(255,255,255,0.2)" }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share2 className="w-3.5 h-3.5 text-white" />
-                          </button>
-                        </div>
-                      )}
-                      {selectedResult === idx && (
+                <div className="w-full flex justify-center py-4">
+                  <Swiper
+                    effect={"cards"}
+                    grabCursor={true}
+                    modules={[EffectCards]}
+                    className="w-[240px] h-[320px] sm:w-[280px] sm:h-[380px]"
+                    onSlideChange={(swiper) => setSelectedResult(swiper.activeIndex)}
+                    initialSlide={selectedResult || 0}
+                  >
+                    {generatedResults.map((item, idx) => (
+                      <SwiperSlide key={idx} className="rounded-xl overflow-hidden shadow-lg bg-white">
                         <div
-                          className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{
-                            background: "linear-gradient(135deg, #A0714A, #8B5E3C)",
-                            boxShadow: "0 2px 8px rgba(139,94,60,0.3)",
-                          }}
+                          className="relative w-full h-full group"
+                          onClick={() => setSelectedResult(idx)}
                         >
-                          <span className="text-white" style={{ fontSize: "0.65rem" }}>✓</span>
+                          <ImageWithFallback
+                            src={item.src}
+                            alt={`Scene ${idx + 1}`}
+                            className="w-full h-full object-cover cursor-zoom-in generated-zoomable"
+                            data-zoomable
+                          />
+                          <div
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                            style={{ background: "linear-gradient(to top, rgba(44,31,20,0.55) 0%, transparent 50%)" }}
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <p className="text-white/90 font-medium" style={{ fontSize: "0.85rem" }}>
+                              {lang === "zh" ? item.labelZh : item.labelEn} {idx + 1}
+                            </p>
+                          </div>
+                          
+                          {/* Action Buttons (visible on hover or always for active card?) - let's keep them on top right */}
+                           <div className="absolute top-3 right-3 flex gap-2 z-10">
+                            <button
+                              className="w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center transition-colors bg-black/20 hover:bg-black/40 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                 downloadImage(item.src);
+                              }}
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center transition-colors bg-black/20 hover:bg-black/40 text-white"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                 copyImageLink(item.src);
+                              }}
+                              title="Share"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
                 </div>
+
+                {/* Generated Copy Display */}
+                {generatedResults[0]?.generatedCopy && (
+                  <div 
+                    className="mt-6 p-5 rounded-xl border relative group"
+                    style={{ 
+                      background: "rgba(255,252,248,0.6)",
+                      borderColor: "rgba(160,113,74,0.15)" 
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium flex items-center gap-2" style={{ color: "#5C3D24" }}>
+                        <Sparkles className="w-4 h-4 text-amber-600" />
+                        {lang === "zh" ? "AI 种草文案" : "AI Generated Copy"}
+                      </h3>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard
+                            .writeText(generatedResults[0].generatedCopy || "")
+                            .then(() => {
+                              toast.success(lang === "zh" ? "已经复制到剪贴板" : "Copied to clipboard");
+                            })
+                            .catch(() => {
+                              toast.success(lang === "zh" ? "已经复制到剪贴板" : "Copied to clipboard");
+                            });
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-black/5 transition-colors text-muted-foreground hover:text-foreground"
+                        title={lang === "zh" ? "复制文案" : "Copy text"}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div 
+                      className="text-sm leading-relaxed whitespace-pre-wrap"
+                      style={{ color: "#4A3B32", fontSize: "0.85rem" }}
+                    >
+                      {generatedResults[0].generatedCopy}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : isGenerating ? (
               <div
@@ -1147,6 +1290,14 @@ export function TryItSection() {
           0% { transform: translateX(-100%); width: 40%; }
           50% { width: 60%; }
           100% { transform: translateX(350%); width: 40%; }
+        }
+        .medium-zoom-overlay {
+          z-index: 99999 !important;
+        }
+        .medium-zoom-image--opened {
+          z-index: 100000 !important;
+          max-width: calc(100vw - 48px) !important;
+          max-height: calc(100vh - 48px) !important;
         }
       `}</style>
     </section>

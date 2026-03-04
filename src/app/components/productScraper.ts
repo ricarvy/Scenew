@@ -3,13 +3,16 @@
  * Backend: http://120.76.142.91:8910
  */
 
-const API_BASE = "http://120.76.142.91:8910";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
 
 export interface ProductInfo {
   title: string;
   image: string;
+  images?: string[];
   platform: string;
   price?: string;
+  shop_name?: string;
+  currency?: string;
 }
 
 export interface ExtractResponse {
@@ -73,8 +76,14 @@ export async function extractProduct(url: string, cookies?: string): Promise<Pro
 
   // Ensure full image URL
   const product = data.data;
-  if (product.image && !product.image.startsWith("http")) {
-    product.image = `${API_BASE}${product.image.startsWith("/") ? "" : "/"}${product.image}`;
+  const ensureUrl = (url: string) => 
+    url.startsWith("http") ? url : `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+
+  if (product.image) {
+    product.image = ensureUrl(product.image);
+  }
+  if (product.images && Array.isArray(product.images)) {
+    product.images = product.images.map(ensureUrl);
   }
 
   return product;
