@@ -4,6 +4,7 @@
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+const REMOTE_DEBUGGING_PORT = import.meta.env.VITE_REMOTE_DEBUGGING_PORT;
 
 export interface ProductInfo {
   title: string;
@@ -107,9 +108,19 @@ export async function startLoginSession(taskId: string, platform: string): Promi
   }
   const data = await res.json();
   
-  // Backend now returns the correct public IP (e.g. ws://120.76.142.91:9222/...)
-  // So we don't need manual replacement anymore.
-  return data.ws_endpoint;
+  // Backend returns the correct public IP (e.g. ws://120.76.142.91:9223/...)
+  // However, if we are running locally (localhost:5173), we might want to ensure
+  // we are connecting to the remote backend's WS if API_BASE is remote.
+  // But usually the backend handles the replacement correctly.
+  
+  let wsEndpoint = data.ws_endpoint;
+
+  // Force port replacement if configured in .env
+  if (REMOTE_DEBUGGING_PORT) {
+    wsEndpoint = wsEndpoint.replace(/:(\d+)\/devtools/, `:${REMOTE_DEBUGGING_PORT}/devtools`);
+  }
+
+  return wsEndpoint;
 }
 
 /**
