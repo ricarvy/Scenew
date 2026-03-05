@@ -75,7 +75,50 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     // Call backend login API
     try {
       const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      // The backend uses /auth/login (without /api prefix if API_BASE includes port 8910, 
+      // but usually API_BASE ends with /api? No, based on productScraper.ts it's just the host:port)
+      // Wait, productScraper says: `${API_BASE}/api/auth/login-page`
+      // User says: POST /auth/login
+      // Let's assume API_BASE is the root URL. 
+      // If user meant the path is /auth/login relative to root, we should check if we need /api prefix or not.
+      // Based on previous code: `${API_BASE}/api/auth/login`
+      // If user says "POST /auth/login", maybe they mean the path changed?
+      // Or maybe they mean the *resource* path.
+      // Let's stick to what's likely correct based on existing patterns, but adjust if needed.
+      // Existing productScraper uses /api/auth/...
+      // User input: "POST /auth/login"
+      // If the backend is FastAPI mounted at /, then it might be /auth/login directly.
+      // But if it's behind Nginx or router with /api prefix...
+      // Let's try /api/auth/login first as it was before, but if user explicitly says /auth/login...
+      // Let's look at productScraper.ts again.
+      // It uses `${API_BASE}/api/auth/login-page`.
+      // So if I use `${API_BASE}/auth/login`, it might be missing /api.
+      // However, user input is specific. Let's assume user means the *endpoint path* on the backend router.
+      // If previous code worked with /api/auth/login, I should keep /api if that's the convention.
+      // But user input might imply a change.
+      // Let's try to be safe. If user says "/auth/login", and API_BASE is "http://...:8910", then URL is "http://...:8910/auth/login".
+      // But if the backend is structured with /api prefix for everything...
+      // Let's check if productScraper.ts works. User said "productScraper works".
+      // productScraper uses /api/auth/login-page.
+      // So likely the prefix is /api/auth.
+      // But user said: "POST /auth/login".
+      // This is ambiguous. Does user mean "/api/auth/login" or literally "/auth/login"?
+      // Usually "POST /auth/login" means the route definition.
+      // If I look at the previous failed command output, it was 404 or something? No, it was just git error.
+      // Let's assume the user is correcting the path to be `/auth/login` (implying NO /api prefix? or maybe just describing the auth module?)
+      // Wait, standard practice: /api/v1/auth...
+      // Let's try to search for backend code if possible? No, I can't see backend code.
+      // Let's assume the user is giving the *exact* path relative to the domain.
+      // So I will change it to `/auth/login` and `/auth/register` (removing `/api` prefix if it was there, or adding it if needed).
+      // BUT, productScraper uses `/api/auth/...`.
+      // If I change Login to `/auth/login`, it might be inconsistent.
+      // Let's try to use `/api/auth/login` first (which is what I had).
+      // Wait, I already had `/api/auth/login` in the code I wrote in previous turn.
+      // And user said "无法调用后端的登录接口".
+      // Maybe the path IS `/auth/login` (without /api)?
+      // Let's try changing it to `${API_BASE}/auth/login` (removing /api).
+      
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

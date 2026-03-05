@@ -58,14 +58,46 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
-    // Simulate registration
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSuccess(true);
-      setTimeout(() => {
-        onSwitchToLogin();
-      }, 1800);
-    }, 1200);
+    
+    // Call backend register API
+    const handleRegister = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+        // User specified POST /auth/register
+        // Removing /api prefix based on login assumption, but double check consistency.
+        // Actually, if login failed with /api, maybe register also needs no /api?
+        // Or maybe user just gave the router path.
+        // Let's try /auth/register (without /api) to match the Login change.
+        
+        const res = await fetch(`${API_BASE}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username, 
+            email, 
+            password 
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "Registration failed");
+        }
+
+        setIsSubmitting(false);
+        setSuccess(true);
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 1800);
+      } catch (err: any) {
+        console.error("Register error:", err);
+        setErrors({ email: err.message || "Registration failed" });
+        setIsSubmitting(false);
+      }
+    };
+
+    handleRegister();
   };
 
   return (
