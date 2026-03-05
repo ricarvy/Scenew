@@ -32,7 +32,7 @@ function GoogleIcon() {
 }
 
 export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
-  const { t } = useI18n();
+  const { t, login } = useI18n();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -130,10 +130,19 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
         throw new Error(data.message || data.error || "Login failed");
       }
 
-      // Success
+      // Save token
+      if (data.token) localStorage.setItem("token", data.token);
+
+      // Update global user state
+      // Assuming backend returns user info like { id, email, username, avatar? }
+      // If not, use email as username fallback
+      login({
+        username: data.username || email.split('@')[0],
+        email: email,
+        avatar: data.avatar
+      });
+
       alert(t("loginSuccess") || "Login successful!");
-      // TODO: Save token/user info if backend returns it
-      // localStorage.setItem("token", data.token);
       onClose();
     } catch (err: any) {
       console.error("Login error:", err);

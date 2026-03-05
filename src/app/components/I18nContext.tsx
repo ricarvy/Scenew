@@ -11,6 +11,7 @@ const translations = {
     navTry: "开始体验",
     navPricing: "定价",
     navLogin: "登录",
+    navLogout: "退出登录",
     langLabel: "中文",
 
     // Hero
@@ -219,6 +220,7 @@ const translations = {
     navTry: "Try It",
     navPricing: "Pricing",
     navLogin: "Login",
+    navLogout: "Logout",
     langLabel: "EN",
 
     // Hero
@@ -431,27 +433,54 @@ const translations = {
 
 export type TranslationKey = keyof (typeof translations)["zh"];
 
+interface User {
+  username: string;
+  email: string;
+  avatar?: string;
+}
+
 interface I18nContextType {
   lang: Lang;
   setLang: (lang: Lang) => void;
   t: (key: TranslationKey) => string;
+  user: User | null;
+  login: (user: User) => void;
+  logout: () => void;
 }
 
 const I18nContext = createContext<I18nContextType>({
   lang: "zh",
   setLang: () => {},
   t: (key) => key,
+  user: null,
+  login: () => {},
+  logout: () => {},
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("zh");
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("scenew_user");
+    return saved ? JSON.parse(saved) : null;
+  });
 
   const t = (key: TranslationKey): string => {
     return translations[lang][key] || key;
   };
 
+  const login = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("scenew_user", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("scenew_user");
+    localStorage.removeItem("token");
+  };
+
   return (
-    <I18nContext.Provider value={{ lang, setLang, t }}>
+    <I18nContext.Provider value={{ lang, setLang, t, user, login, logout }}>
       {children}
     </I18nContext.Provider>
   );

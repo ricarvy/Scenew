@@ -11,8 +11,10 @@ export function Navbar() {
   const [langOpen, setLangOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
-  const { lang, setLang, t } = useI18n();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { lang, setLang, t, user, logout } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,6 +29,17 @@ export function Navbar() {
     const handler = (e: MouseEvent) => {
       if (langRef.current && !langRef.current.contains(e.target as Node)) {
         setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -163,18 +176,60 @@ export function Navbar() {
               )}
             </div>
 
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="px-5 py-2 text-primary-foreground rounded-full hover:opacity-90 transition-all duration-300"
-              style={{
-                fontSize: "0.8rem",
-                letterSpacing: "0.05em",
-                background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
-                boxShadow: "0 4px 16px rgba(139,94,60,0.2)",
-              }}
-            >
-              {t("navLogin")}
-            </button>
+            {user ? (
+              <div ref={userMenuRef} className="relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium overflow-hidden">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      user.username.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-foreground max-w-[100px] truncate hidden md:block">
+                    {user.username}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {userMenuOpen && (
+                  <div
+                    className="absolute top-full right-0 mt-2 w-48 bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-lg shadow-black/8 overflow-hidden py-1"
+                    style={{ animation: "navDropIn 0.2s ease" }}
+                  >
+                    <div className="px-4 py-3 border-b border-border/50 md:hidden">
+                      <p className="font-medium text-sm truncate">{user.username}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50/50 transition-colors flex items-center gap-2"
+                    >
+                      {t("navLogout")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => setLoginOpen(true)}
+                className="px-5 py-2 text-primary-foreground rounded-full hover:opacity-90 transition-all duration-300"
+                style={{
+                  fontSize: "0.8rem",
+                  letterSpacing: "0.05em",
+                  background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                  boxShadow: "0 4px 16px rgba(139,94,60,0.2)",
+                }}
+              >
+                {t("navLogin")}
+              </button>
+            )}
           </div>
 
           {/* Mobile menu toggle */}
@@ -194,6 +249,22 @@ export function Navbar() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden bg-background/95 backdrop-blur-xl border-b border-border/50 px-6 py-6 space-y-4">
+            {user && (
+              <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg overflow-hidden">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                  ) : (
+                    user.username.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{user.username}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              </div>
+            )}
+            
             {navItems.map((item) => (
               <a
                 key={item.href}
@@ -241,12 +312,20 @@ export function Navbar() {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                setLoginOpen(true);
+                if (user) {
+                  logout();
+                } else {
+                  setLoginOpen(true);
+                }
               }}
-              className="w-full py-2.5 bg-primary text-primary-foreground rounded-full mt-2"
+              className={`w-full py-2.5 rounded-full mt-2 transition-colors ${
+                user 
+                  ? "bg-red-50 text-red-500 hover:bg-red-100" 
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
               style={{ fontSize: "0.85rem" }}
             >
-              {t("navLogin")}
+              {user ? t("navLogout") : t("navLogin")}
             </button>
           </div>
         )}
