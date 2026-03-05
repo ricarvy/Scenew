@@ -350,8 +350,8 @@ export function BrowserLoginModal({
 
         {/* Browser viewport */}
         <div
-          className="relative bg-black/5 flex items-center justify-center"
-          style={{ minHeight: "420px" }}
+          className="relative bg-black/5 flex items-center justify-center overflow-auto"
+          style={{ minHeight: "420px", maxHeight: "600px" }}
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
@@ -393,10 +393,10 @@ export function BrowserLoginModal({
               ref={canvasRef}
               width={CANVAS_WIDTH}
               height={CANVAS_HEIGHT}
-              className="w-full cursor-pointer"
+              className="cursor-pointer shadow-lg bg-white"
               style={{
-                maxHeight: "480px",
-                objectFit: "contain",
+                maxWidth: "none", // Allow horizontal scrolling
+                objectFit: "none",
                 imageRendering: "auto",
               }}
               onMouseDown={handleMouseDown}
