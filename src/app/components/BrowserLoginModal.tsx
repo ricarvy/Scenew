@@ -7,7 +7,7 @@ interface BrowserLoginModalProps {
   isOpen: boolean;
   taskId: string;
   onClose: () => void;
-  onLoginSuccess: (product: ProductInfo) => void;
+  onLoginSuccess: () => void;
 }
 
 /**
@@ -255,8 +255,8 @@ export function BrowserLoginModal({
   const handleConfirmLogin = async () => {
     setConfirming(true);
     try {
-      const product = await confirmLogin(taskId);
-      onLoginSuccess(product);
+      await confirmLogin(taskId);
+      onLoginSuccess();
     } catch (err: any) {
       setError(err.message || "Confirmation failed");
     } finally {

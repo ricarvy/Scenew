@@ -557,15 +557,11 @@ export function TryItSection() {
   };
 
   // Browser login success handler
-  const handleBrowserLoginSuccess = (product: ProductInfo) => {
-    setProductLinks((prev) =>
-      prev.map((p) =>
-        p.id === browserLoginLinkId
-          ? { ...p, status: "success", product }
-          : p
-      )
-    );
+  const handleBrowserLoginSuccess = () => {
     setBrowserLoginOpen(false);
+    if (browserLoginLinkId) {
+      retryLink(browserLoginLinkId);
+    }
   };
 
   // ── Validation & generation ─────────────────────────────

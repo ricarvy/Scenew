@@ -25,10 +25,12 @@ export interface ExtractResponse {
 
 export class NeedLoginError extends Error {
   task_id: string;
-  constructor(taskId: string) {
+  platform?: string;
+  constructor(taskId: string, platform?: string) {
     super("Platform login required");
     this.name = "NeedLoginError";
     this.task_id = taskId;
+    this.platform = platform;
   }
 }
 
@@ -59,7 +61,7 @@ export async function extractProduct(url: string, cookies?: string): Promise<Pro
   if (res.status === 401) {
     const body = await res.json();
     if (body.need_login && body.task_id) {
-      throw new NeedLoginError(body.task_id);
+      throw new NeedLoginError(body.task_id, body.platform);
     }
     throw new ScraperError("Unauthorized", 401);
   }
@@ -118,7 +120,7 @@ export async function startLoginSession(taskId: string): Promise<string> {
 /**
  * Confirm login completion, triggers cookie extraction + re-crawl.
  */
-export async function confirmLogin(taskId: string): Promise<ProductInfo> {
+export async function confirmLogin(taskId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/auth/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -128,14 +130,9 @@ export async function confirmLogin(taskId: string): Promise<ProductInfo> {
     throw new ScraperError("Login confirmation failed", res.status);
   }
   const data = await res.json();
-  if (!data.success || !data.data) {
+  if (!data.success) {
     throw new ScraperError(data.error || "Re-extract failed", 500);
   }
-  const product = data.data;
-  if (product.image && !product.image.startsWith("http")) {
-    product.image = `${API_BASE}${product.image.startsWith("/") ? "" : "/"}${product.image}`;
-  }
-  return product;
 }
 
 /**
