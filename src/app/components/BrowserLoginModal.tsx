@@ -34,9 +34,9 @@ export function BrowserLoginModal({
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
 
-  // Canvas dimensions for screencast
-  const CANVAS_WIDTH = 800;
-  const CANVAS_HEIGHT = 600;
+  // Canvas dimensions for screencast - increased for better visibility
+  const CANVAS_WIDTH = 1280;
+  const CANVAS_HEIGHT = 800;
 
   const cleanup = useCallback(() => {
     if (wsRef.current) {
@@ -78,7 +78,21 @@ export function BrowserLoginModal({
           setLoading(false);
           console.log("WebSocket connected to:", wsEndpoint);
 
-          // Start screencast via CDP
+          // 1. Set remote viewport size to match canvas
+          ws?.send(
+            JSON.stringify({
+              method: "Emulation.setDeviceMetricsOverride",
+              params: {
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT,
+                deviceScaleFactor: 1,
+                mobile: false,
+              },
+              id: 0,
+            })
+          );
+
+          // 2. Start screencast via CDP
           ws?.send(
             JSON.stringify({
               method: "Page.startScreencast",
