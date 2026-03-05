@@ -107,19 +107,9 @@ export async function startLoginSession(taskId: string, platform: string): Promi
   }
   const data = await res.json();
   
-  // Fix WebSocket URL for remote environment
-  // Backend returns "ws://localhost:...", we need to replace it with API_BASE host
-  let wsEndpoint = data.ws_endpoint;
-  if (wsEndpoint && API_BASE.includes("http")) {
-    try {
-      const apiHost = new URL(API_BASE).hostname;
-      wsEndpoint = wsEndpoint.replace("localhost", apiHost).replace("127.0.0.1", apiHost);
-    } catch (e) {
-      console.warn("Failed to replace WS host", e);
-    }
-  }
-  
-  return wsEndpoint;
+  // Backend now returns the correct public IP (e.g. ws://120.76.142.91:9222/...)
+  // So we don't need manual replacement anymore.
+  return data.ws_endpoint;
 }
 
 /**
