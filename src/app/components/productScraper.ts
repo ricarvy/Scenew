@@ -127,6 +127,7 @@ export async function startLoginSession(taskId: string, platform: string): Promi
  * Confirm login completion, triggers cookie extraction + re-crawl.
  */
 export async function confirmLogin(taskId: string): Promise<void> {
+  console.log("[Scraper] Confirming login for task:", taskId, "at", `${API_BASE}/api/auth/confirm`);
   const res = await fetch(`${API_BASE}/api/auth/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
