@@ -67,16 +67,38 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     return Object.keys(errs).length === 0;
   };
 
-  const handleEmailLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
-    // Simulate email login
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert("Email login simulated for: " + email);
+    
+    // Call backend login API
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || data.error || "Login failed");
+      }
+
+      // Success
+      alert(t("loginSuccess") || "Login successful!");
+      // TODO: Save token/user info if backend returns it
+      // localStorage.setItem("token", data.token);
       onClose();
-    }, 1000);
+    } catch (err: any) {
+      console.error("Login error:", err);
+      // Set error message to email field for simplicity, or general error
+      setErrors({ email: err.message || "Login failed. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
