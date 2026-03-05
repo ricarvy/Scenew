@@ -99,7 +99,20 @@ export async function startLoginSession(taskId: string): Promise<string> {
     throw new ScraperError("Failed to start login session", res.status);
   }
   const data = await res.json();
-  return data.ws_endpoint;
+  
+  // Fix WebSocket URL for remote environment
+  // Backend returns "ws://localhost:...", we need to replace it with API_BASE host
+  let wsEndpoint = data.ws_endpoint;
+  if (wsEndpoint && API_BASE.includes("http")) {
+    try {
+      const apiHost = new URL(API_BASE).hostname;
+      wsEndpoint = wsEndpoint.replace("localhost", apiHost).replace("127.0.0.1", apiHost);
+    } catch (e) {
+      console.warn("Failed to replace WS host", e);
+    }
+  }
+  
+  return wsEndpoint;
 }
 
 /**
