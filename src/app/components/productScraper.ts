@@ -95,8 +95,13 @@ export async function extractProduct(url: string, cookies?: string): Promise<Pro
  * Start remote browser login session for a task.
  * Returns the WebSocket endpoint for CDP screencast.
  */
-export async function startLoginSession(taskId: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/auth/login-page?task_id=${encodeURIComponent(taskId)}`);
+export async function startLoginSession(taskId: string, platform: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/login-page`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId, platform }),
+  });
+
   if (!res.ok) {
     throw new ScraperError("Failed to start login session", res.status);
   }

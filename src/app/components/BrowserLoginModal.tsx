@@ -6,6 +6,7 @@ import { startLoginSession, confirmLogin, type ProductInfo } from "./productScra
 interface BrowserLoginModalProps {
   isOpen: boolean;
   taskId: string;
+  platform: string;
   onClose: () => void;
   onLoginSuccess: () => void;
 }
@@ -18,6 +19,7 @@ interface BrowserLoginModalProps {
 export function BrowserLoginModal({
   isOpen,
   taskId,
+  platform,
   onClose,
   onLoginSuccess,
 }: BrowserLoginModalProps) {
@@ -62,7 +64,7 @@ export function BrowserLoginModal({
       try {
         setLoading(true);
         setError("");
-        const wsEndpoint = await startLoginSession(taskId);
+        const wsEndpoint = await startLoginSession(taskId, platform);
 
         // Guard against stale session
         if (currentSession !== sessionIdRef.current) return;
@@ -149,7 +151,7 @@ export function BrowserLoginModal({
         }
       }
     };
-  }, [isOpen, taskId, retryCount]);
+  }, [isOpen, taskId, platform, retryCount]);
 
   useEffect(() => {
     if (isOpen) {

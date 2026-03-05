@@ -391,6 +391,7 @@ export function TryItSection() {
   // Browser login modal state
   const [browserLoginOpen, setBrowserLoginOpen] = useState(false);
   const [browserLoginTaskId, setBrowserLoginTaskId] = useState("");
+  const [browserLoginPlatform, setBrowserLoginPlatform] = useState("");
   const [browserLoginLinkId, setBrowserLoginLinkId] = useState("");
   const zoomRef = useRef<ReturnType<typeof mediumZoom> | null>(null);
 
@@ -468,6 +469,7 @@ export function TryItSection() {
           );
           // Auto-open browser login
           setBrowserLoginTaskId(err.task_id);
+          setBrowserLoginPlatform(err.platform || item.platform.id);
           setBrowserLoginLinkId(item.id);
           setBrowserLoginOpen(true);
         } else {
@@ -1360,6 +1362,7 @@ export function TryItSection() {
       <BrowserLoginModal
         isOpen={browserLoginOpen}
         taskId={browserLoginTaskId}
+        platform={browserLoginPlatform}
         onClose={() => setBrowserLoginOpen(false)}
         onLoginSuccess={handleBrowserLoginSuccess}
       />
