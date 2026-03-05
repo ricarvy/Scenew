@@ -76,6 +76,7 @@ export function BrowserLoginModal({
           if (currentSession !== sessionIdRef.current) return;
           setConnected(true);
           setLoading(false);
+          console.log("WebSocket connected to:", wsEndpoint);
 
           // Start screencast via CDP
           ws?.send(
@@ -122,8 +123,9 @@ export function BrowserLoginModal({
           }
         };
 
-        ws.onerror = () => {
+        ws.onerror = (e) => {
           if (currentSession !== sessionIdRef.current) return;
+          console.error("WebSocket error:", e);
           setError("WebSocket connection failed");
           setLoading(false);
         };
