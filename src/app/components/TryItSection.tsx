@@ -51,6 +51,7 @@ interface GenerateRequest {
   sceneDescription: string;
   creativeMode?: "copy" | "inspire";
   sceneImage?: File;
+  seedMode?: boolean;
 }
 
 interface GenerateResult {
@@ -78,6 +79,9 @@ async function generateSceneImages(
       
     return {
       url: l.url,
+      title: l.product?.title,
+      price: l.product?.price,
+      currency: l.product?.currency,
       selected_image: images[l.selectedImageIndex || 0] || l.product?.image
     };
   });
@@ -85,6 +89,7 @@ async function generateSceneImages(
   formData.append("links", JSON.stringify(formattedLinks));
   formData.append("scene", request.sceneDescription);
   formData.append("mode", request.creativeMode || "copy");
+  formData.append("seed_mode", request.seedMode ? "true" : "false");
   
   if (request.sceneImage) {
     formData.append("scene_image", request.sceneImage);
@@ -361,6 +366,7 @@ export function TryItSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const sceneImageInputRef = useRef<HTMLInputElement>(null);
+  const generateStartRef = useRef<number | null>(null);
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
@@ -377,6 +383,7 @@ export function TryItSection() {
     { src: string; labelZh: string; labelEn: string; generatedCopy?: string }[]
   >([]);
   const [generateError, setGenerateError] = useState<string>("");
+  const [seedMode, setSeedMode] = useState(false);
 
   // Creative mode tab state
   const [creativeMode, setCreativeMode] = useState<"copy" | "inspire">("copy");
@@ -505,7 +512,7 @@ export function TryItSection() {
         if (prev.length >= 5) return prev;
         if (prev.some((p) => p.url === trimmed)) return prev;
         added = true;
-        return [...prev, newItem];
+        return [newItem, ...prev];
       });
 
       // Only clear input & fetch if actually added
@@ -572,6 +579,7 @@ export function TryItSection() {
 
   const handleGenerate = () => {
     if (!validate()) return;
+    generateStartRef.current = performance.now();
     setIsGenerating(true);
     setGenerated(false);
     setSelectedResult(null);
@@ -586,16 +594,28 @@ export function TryItSection() {
       sceneDescription: sceneDesc,
       creativeMode: creativeMode,
       sceneImage: sceneImageFile || undefined,
+      seedMode,
     };
     generateSceneImages(request)
       .then((results) => {
         setIsGenerating(false);
         setGenerated(true);
         setGeneratedResults(results);
+        const start = generateStartRef.current ?? performance.now();
+        const seconds = ((performance.now() - start) / 1000).toFixed(1);
+        toast.success(lang === "zh" ? "生成成功" : "Generation succeeded", {
+          description: `${lang === "zh" ? "本轮耗时" : "Time"} ${seconds}s`,
+        });
       })
       .catch((err) => {
         setIsGenerating(false);
         setGenerateError(err.message || "生成失败");
+        const start = generateStartRef.current ?? performance.now();
+        const seconds = ((performance.now() - start) / 1000).toFixed(1);
+        const detail = typeof err?.message === "string" ? err.message : "";
+        toast.error(lang === "zh" ? "生成失败" : "Generation failed", {
+          description: `${detail ? `${detail} · ` : ""}${lang === "zh" ? "本轮耗时" : "Time"} ${seconds}s`,
+        });
       });
   };
 
@@ -739,6 +759,69 @@ export function TryItSection() {
                   className="text-muted-foreground/70"
                   style={{ fontSize: "0.78rem", lineHeight: 1.6 }}
                 />
+              </div>
+            </div>
+            
+            <div
+              className="rounded-2xl p-4 sm:p-5 transition-all duration-300"
+              style={{
+                background: seedMode
+                  ? "linear-gradient(135deg, rgba(160,113,74,0.14) 0%, rgba(255,204,102,0.10) 45%, rgba(139,94,60,0.10) 100%)"
+                  : "rgba(237,229,216,0.25)",
+                border: seedMode ? "1px solid rgba(160,113,74,0.22)" : "1px solid rgba(196,149,106,0.10)",
+                boxShadow: seedMode ? "0 10px 32px rgba(139,94,60,0.10)" : "0 2px 10px rgba(139,94,60,0.04)",
+              }}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
+                    <p className="font-medium" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
+                      {lang === "zh" ? "种草模式" : "Seeding Mode"}
+                    </p>
+                    {seedMode && (
+                      <span
+                        className="px-2 py-0.5 rounded-full seed-pill"
+                        style={{ fontSize: "0.65rem", color: "#8B5E3C", background: "rgba(255,255,255,0.55)", border: "1px solid rgba(160,113,74,0.18)" }}
+                      >
+                        {lang === "zh" ? "ON" : "ON"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-muted-foreground/70" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                    {lang === "zh"
+                      ? "开启后，生成的场景图会自动带上商品的购物卡片截图"
+                      : "When on, generated scenes include the product shopping card snapshot"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  aria-pressed={seedMode}
+                  onClick={() => setSeedMode((v) => !v)}
+                  className="relative w-14 h-9 rounded-full flex-shrink-0 transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0714A]/30"
+                  style={{
+                    background: seedMode
+                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 55%, #FFCC66 110%)"
+                      : "rgba(139,94,60,0.18)",
+                    boxShadow: seedMode ? "0 10px 24px rgba(160,113,74,0.28)" : "inset 0 0 0 1px rgba(160,113,74,0.18)",
+                  }}
+                >
+                  <span
+                    className="absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 seed-shimmer"
+                    style={{ opacity: seedMode ? 1 : 0 }}
+                  />
+                  <span
+                    className="absolute top-1 left-1 w-7 h-7 rounded-full transition-transform duration-300 flex items-center justify-center"
+                    style={{
+                      transform: seedMode ? "translateX(20px)" : "translateX(0px)",
+                      background: "rgba(255,252,248,0.98)",
+                      boxShadow: seedMode ? "0 8px 16px rgba(44,31,20,0.22)" : "0 6px 12px rgba(44,31,20,0.14)",
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -1298,6 +1381,30 @@ export function TryItSection() {
           z-index: 100000 !important;
           max-width: calc(100vw - 48px) !important;
           max-height: calc(100vh - 48px) !important;
+        }
+        .seed-sparkle {
+          animation: seedSparkle 1.2s ease-in-out infinite;
+        }
+        .seed-shimmer {
+          background: linear-gradient(120deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.22) 35%, rgba(255,255,255,0.0) 70%);
+          animation: seedShimmer 1.6s ease-in-out infinite;
+        }
+        .seed-pill {
+          animation: seedPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes seedSparkle {
+          0% { transform: rotate(-6deg) scale(1); }
+          50% { transform: rotate(10deg) scale(1.08); }
+          100% { transform: rotate(-6deg) scale(1); }
+        }
+        @keyframes seedShimmer {
+          0% { transform: translateX(-30%); }
+          100% { transform: translateX(30%); }
+        }
+        @keyframes seedPulse {
+          0% { box-shadow: 0 0 0 0 rgba(160,113,74,0.22); }
+          70% { box-shadow: 0 0 0 10px rgba(160,113,74,0.0); }
+          100% { box-shadow: 0 0 0 0 rgba(160,113,74,0.0); }
         }
       `}</style>
     </section>
