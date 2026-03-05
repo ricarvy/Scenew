@@ -34,9 +34,9 @@ export function BrowserLoginModal({
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
 
-  // Canvas dimensions for screencast - increased for better visibility
+  // Canvas dimensions for screencast - set to a standard desktop resolution
   const CANVAS_WIDTH = 1280;
-  const CANVAS_HEIGHT = 800;
+  const CANVAS_HEIGHT = 1024;
 
   const cleanup = useCallback(() => {
     if (wsRef.current) {
@@ -350,60 +350,62 @@ export function BrowserLoginModal({
 
         {/* Browser viewport */}
         <div
-          className="relative bg-black/5 flex items-center justify-center overflow-auto"
-          style={{ minHeight: "420px", maxHeight: "600px" }}
+          className="relative bg-black/5 overflow-auto"
+          style={{ height: "600px" }}
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onKeyUp={handleKeyUp}
         >
-          {loading ? (
-            <div className="flex flex-col items-center gap-4 py-20">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#A0714A" }} />
-              <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
-                {t("browserLoginLoading")}
-              </p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center gap-3 py-20">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(196,69,54,0.1)" }}
-              >
-                <X className="w-5 h-5 text-destructive" />
+          <div className="min-w-full min-h-full flex items-center justify-center p-4">
+            {loading ? (
+              <div className="flex flex-col items-center gap-4 py-20">
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#A0714A" }} />
+                <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
+                  {t("browserLoginLoading")}
+                </p>
               </div>
-              <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
-                {error}
-              </p>
-              <button
-                onClick={() => setRetryCount((c) => c + 1)}
-                className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:opacity-80"
+            ) : error ? (
+              <div className="flex flex-col items-center gap-3 py-20">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(196,69,54,0.1)" }}
+                >
+                  <X className="w-5 h-5 text-destructive" />
+                </div>
+                <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
+                  {error}
+                </p>
+                <button
+                  onClick={() => setRetryCount((c) => c + 1)}
+                  className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "#A0714A",
+                    background: "rgba(160,113,74,0.08)",
+                    border: "1px solid rgba(160,113,74,0.15)",
+                  }}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {t("browserLoginTitle") === "需要平台登录" ? "重试连接" : "Retry Connection"}
+                </button>
+              </div>
+            ) : (
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                className="cursor-pointer shadow-lg bg-white shrink-0"
                 style={{
-                  fontSize: "0.8rem",
-                  color: "#A0714A",
-                  background: "rgba(160,113,74,0.08)",
-                  border: "1px solid rgba(160,113,74,0.15)",
+                  maxWidth: "none",
+                  objectFit: "none",
+                  imageRendering: "auto",
                 }}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                {t("browserLoginTitle") === "需要平台登录" ? "重试连接" : "Retry Connection"}
-              </button>
-            </div>
-          ) : (
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
-              className="cursor-pointer shadow-lg bg-white"
-              style={{
-                maxWidth: "none", // Allow horizontal scrolling
-                objectFit: "none",
-                imageRendering: "auto",
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseUp={handleMouseUp}
-              onMouseMove={handleMouseMove}
-            />
-          )}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+              />
+            )}
+          </div>
         </div>
 
         {/* Footer actions */}
