@@ -272,10 +272,13 @@ export function BrowserLoginModal({
 
   const handleConfirmLogin = async () => {
     setConfirming(true);
+    console.log("Confirm button clicked, calling API...");
     try {
       await confirmLogin(taskId);
+      console.log("Login confirmed successfully");
       onLoginSuccess();
     } catch (err: any) {
+      console.error("Confirmation error:", err);
       setError(err.message || "Confirmation failed");
     } finally {
       setConfirming(false);
