@@ -1,9 +1,9 @@
 /**
  * Product scraper utility - calls backend /api/extract endpoint
- * Backend: http://120.76.142.91:8910
+ * Backend: http://120.24.150.216:8910
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
 const REMOTE_DEBUGGING_PORT = import.meta.env.VITE_REMOTE_DEBUGGING_PORT;
 
 export interface ProductInfo {
@@ -115,8 +115,9 @@ export async function startLoginSession(taskId: string, platform: string): Promi
   
   let wsEndpoint = data.ws_endpoint;
 
-  // Force port replacement if configured in .env
-  if (REMOTE_DEBUGGING_PORT) {
+  // Force port replacement if configured in .env AND it's a localhost connection
+  // This prevents breaking remote connections when running locally
+  if (REMOTE_DEBUGGING_PORT && wsEndpoint.includes("127.0.0.1")) {
     wsEndpoint = wsEndpoint.replace(/:(\d+)\/devtools/, `:${REMOTE_DEBUGGING_PORT}/devtools`);
   }
 

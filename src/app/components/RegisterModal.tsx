@@ -62,7 +62,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     // Call backend register API
     const handleRegister = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
         // User specified POST /auth/register
         // Removing /api prefix based on login assumption, but double check consistency.
         // Actually, if login failed with /api, maybe register also needs no /api?

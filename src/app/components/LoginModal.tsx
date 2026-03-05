@@ -74,7 +74,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     
     // Call backend login API
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
       // The backend uses /auth/login (without /api prefix if API_BASE includes port 8910, 
       // but usually API_BASE ends with /api? No, based on productScraper.ts it's just the host:port)
       // Wait, productScraper says: `${API_BASE}/api/auth/login-page`
