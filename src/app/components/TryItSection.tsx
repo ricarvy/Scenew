@@ -82,6 +82,7 @@ async function generateSceneImages(
       title: l.product?.title,
       price: l.product?.price,
       currency: l.product?.currency,
+      shop: l.product?.shop_name,
       selected_image: images[l.selectedImageIndex || 0] || l.product?.image
     };
   });
