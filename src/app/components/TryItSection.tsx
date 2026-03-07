@@ -84,11 +84,11 @@ async function generateSceneImages(
       
     return {
       url: l.url,
-      title: l.product?.title,
-      price: l.product?.price,
-      currency: l.product?.currency,
-      shop: l.product?.shop_name,
-      selected_image: images[l.selectedImageIndex || 0] || l.product?.image
+      title: l.product?.title || "",
+      price: l.product?.price || "",
+      currency: l.product?.currency || "",
+      shop: l.product?.shop_name || "",
+      selected_image: images[l.selectedImageIndex || 0] || l.product?.image || ""
     };
   });
   
@@ -115,7 +115,23 @@ async function generateSceneImages(
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    throw new Error(errBody.message || `Generate failed (${res.status})`);
+    console.error("Generate API Error:", errBody);
+    
+    let msg = errBody.message;
+    if (!msg && errBody.detail) {
+      if (typeof errBody.detail === "string") {
+        msg = errBody.detail;
+      } else if (Array.isArray(errBody.detail)) {
+        // FastAPI validation error style
+        msg = errBody.detail
+          .map((e: any) => `${e.loc?.join(".")} ${e.msg}`)
+          .join("; ");
+      } else {
+        msg = JSON.stringify(errBody.detail);
+      }
+    }
+    
+    throw new Error(msg || `Generate failed (${res.status})`);
   }
 
   const data = await res.json();
@@ -606,6 +622,17 @@ export function TryItSection() {
 
   const handleGenerate = () => {
     if (!validate()) return;
+
+    if (productLinks.some(l => l.status === "fetching")) {
+      toast.warning(lang === "zh" ? "请等待商品链接解析完成" : "Please wait for product links to load");
+      return;
+    }
+    
+    if (productLinks.some(l => l.status === "error" || l.status === "need_login")) {
+      toast.error(lang === "zh" ? "存在解析失败的链接，请删除或重试" : "Please remove or retry failed links");
+      return;
+    }
+
     generateStartRef.current = performance.now();
     setIsGenerating(true);
     setGenerated(false);
