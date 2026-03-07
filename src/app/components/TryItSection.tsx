@@ -52,7 +52,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:
 
 interface GenerateRequest {
   photo: File;
-  productLinks: { url: string; product?: ProductInfo; selectedImageIndex?: number }[];
+  productLinks: { 
+    url: string; 
+    product?: ProductInfo; 
+    selectedImageIndex?: number;
+    platformName?: string;
+  }[];
   sceneDescription: string;
   creativeMode?: "copy" | "inspire";
   sceneImage?: File;
@@ -76,30 +81,34 @@ async function generateSceneImages(
   formData.append("photo", request.photo);
   
   // Format links with selected image index
-  const formattedLinks = request.productLinks.map(l => {
-    // Logic must match ProductCard display logic to ensure WYSIWYG
-    const images = l.product?.images && l.product.images.length > 0 
-      ? l.product.images 
-      : l.product?.image ? [l.product.image] : [];
-      
-    return {
-      url: l.url,
-      title: l.product?.title || "",
-      price: l.product?.price || "",
-      currency: l.product?.currency || "",
-      shop: l.product?.shop_name || "",
-      selected_image: images[l.selectedImageIndex || 0] || l.product?.image || ""
-    };
-  });
-  
-  formData.append("links", JSON.stringify(formattedLinks));
-  formData.append("scene", request.sceneDescription);
-  formData.append("mode", request.creativeMode || "copy");
-  formData.append("seed_mode", request.seedMode ? "true" : "false");
-  
-  if (request.sceneImage) {
-    formData.append("scene_image", request.sceneImage);
-  }
+    const formattedLinks = request.productLinks.map(l => {
+      // Logic must match ProductCard display logic to ensure WYSIWYG
+      const images = l.product?.images && l.product.images.length > 0 
+        ? l.product.images 
+        : l.product?.image ? [l.product.image] : [];
+        
+      return {
+        url: l.url,
+        title: l.product?.title || "",
+        price: l.product?.price || "",
+        currency: l.product?.currency || "",
+        shop_name: l.product?.shop_name || "",
+        platform: l.product?.platform || l.platformName || "",
+        selected_image: images[l.selectedImageIndex || 0] || l.product?.image || ""
+      };
+    });
+    
+    formData.append("links", JSON.stringify(formattedLinks));
+    formData.append("scene", request.sceneDescription || " ");
+    formData.append("mode", request.creativeMode || "copy");
+    
+    if (request.seedMode) {
+      formData.append("seed_mode", "true");
+    }
+    
+    if (request.sceneImage) {
+      formData.append("scene_image", request.sceneImage);
+    }
 
   const token = localStorage.getItem("token") || "";
   console.log("Generating with token:", token ? token.substring(0, 10) + "..." : "No token");
@@ -643,7 +652,8 @@ export function TryItSection() {
       productLinks: productLinks.map((link) => ({ 
         url: link.url, 
         product: link.product,
-        selectedImageIndex: link.selectedImageIndex 
+        selectedImageIndex: link.selectedImageIndex,
+        platformName: link.platform.name,
       })),
       sceneDescription: sceneDesc,
       creativeMode: creativeMode,
