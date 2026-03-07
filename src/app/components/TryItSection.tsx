@@ -18,11 +18,13 @@ import {
   ShoppingBag,
   Package,
   Copy,
+  HelpCircle,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useI18n } from "./I18nContext";
 import { TypewriterText } from "./TypewriterText";
 import { GlowOrb } from "./WarmGlow";
+import { ModeExplanationModal } from "./ModeExplanationModal";
 import {
   detectPlatform,
   extractProduct,
@@ -34,13 +36,16 @@ import { BrowserLoginModal } from "./BrowserLoginModal";
 
 // Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
-import { EffectCards } from "swiper/modules";
+import { Pagination, EffectCards } from "swiper/modules";
 import "swiper/css";
+import "swiper/css/pagination";
 import "swiper/css/effect-cards";
 import { toast } from "sonner";
 import mediumZoom from "medium-zoom";
 
 gsap.registerPlugin(ScrollTrigger);
+
+import { saveGeneration } from "./generationHistory";
 
 // ── API Configuration ────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
@@ -96,9 +101,16 @@ async function generateSceneImages(
     formData.append("scene_image", request.sceneImage);
   }
 
-  const res = await fetch(`${API_BASE_URL}/api/generate`, {
+  const token = localStorage.getItem("token") || "";
+  console.log("Generating with token:", token ? token.substring(0, 10) + "..." : "No token");
+  
+  // Use relative path to leverage Vite proxy
+  const res = await fetch(`/api/generate`, {
     method: "POST",
     body: formData,
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
   });
 
   if (!res.ok) {
@@ -386,6 +398,9 @@ export function TryItSection() {
   const [generateError, setGenerateError] = useState<string>("");
   const [seedMode, setSeedMode] = useState(false);
 
+  // Mode explanation modal
+  const [modeModalOpen, setModeModalOpen] = useState(false);
+
   // Creative mode tab state
   const [creativeMode, setCreativeMode] = useState<"copy" | "inspire">("copy");
 
@@ -503,6 +518,19 @@ export function TryItSection() {
       if (!isValidUrl(trimmed)) return;
 
       const platform = detectPlatform(trimmed);
+      
+      // Allow only Taobao, Tmall, 1688 (Alibaba)
+      // platform.id values: "taobao", "tmall", "1688"
+      const supportedPlatforms = ["taobao", "tmall", "1688"];
+      if (!supportedPlatforms.includes(platform.id)) {
+        toast.info(t("tryLinkUnsupported"), {
+          description: "Supported: Taobao, Tmall",
+          duration: 4000,
+          icon: <AlertCircle className="w-5 h-5 text-amber-500" />
+        });
+        return;
+      }
+
       const newItem: ProductLinkItem = {
         id: nextId(),
         url: trimmed,
@@ -595,15 +623,32 @@ export function TryItSection() {
       sceneImage: sceneImageFile || undefined,
       seedMode,
     };
-    generateSceneImages(request)
+      generateSceneImages(request)
       .then((results) => {
         setIsGenerating(false);
         setGenerated(true);
         setGeneratedResults(results);
+        
+        if (results.length > 0) {
+           const productImg = productLinks[0]?.product?.image || "";
+           saveGeneration({
+             userImage: photoPreview, 
+             productImage: productImg,
+             productImages: [productImg],
+             resultImage: results[0].src,
+             resultImages: results.map(r => r.src),
+             prompt: sceneDesc || (lang === "zh" ? "自动生成场景" : "Auto generated scene"),
+             scene: results[0].labelZh,
+             mode: creativeMode,
+             status: "success"
+           });
+        }
+
         const start = generateStartRef.current ?? performance.now();
         const seconds = ((performance.now() - start) / 1000).toFixed(1);
         toast.success(lang === "zh" ? "生成成功" : "Generation succeeded", {
           description: `${lang === "zh" ? "本轮耗时" : "Time"} ${seconds}s`,
+          duration: 10000,
         });
       })
       .catch((err) => {
@@ -614,6 +659,7 @@ export function TryItSection() {
         const detail = typeof err?.message === "string" ? err.message : "";
         toast.error(lang === "zh" ? "生成失败" : "Generation failed", {
           description: `${detail ? `${detail} · ` : ""}${lang === "zh" ? "本轮耗时" : "Time"} ${seconds}s`,
+          duration: 10000,
         });
       });
   };
@@ -775,8 +821,19 @@ export function TryItSection() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
-                    <p className="font-medium" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
+                    <p className="font-medium flex items-center gap-1.5" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
                       {lang === "zh" ? "种草模式" : "Seeding Mode"}
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModeModalOpen(true);
+                        }}
+                        className="text-muted-foreground/50 hover:text-[#A0714A] transition-colors"
+                        title="What is this?"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </button>
                     </p>
                     {seedMode && (
                       <span
@@ -1205,15 +1262,16 @@ export function TryItSection() {
 
                 <div className="w-full flex justify-center py-4">
                   <Swiper
-                    effect={"cards"}
+                    modules={[Pagination, EffectCards]}
+                    effect="cards"
                     grabCursor={true}
-                    modules={[EffectCards]}
-                    className="w-[240px] h-[320px] sm:w-[280px] sm:h-[380px]"
+                    pagination={{ clickable: true }}
+                    className="w-full h-auto max-w-md mx-auto rounded-xl"
                     onSlideChange={(swiper) => setSelectedResult(swiper.activeIndex)}
                     initialSlide={selectedResult || 0}
                   >
                     {generatedResults.map((item, idx) => (
-                      <SwiperSlide key={idx} className="rounded-xl overflow-hidden shadow-lg bg-white">
+                      <SwiperSlide key={idx} className="rounded-xl overflow-hidden shadow-lg bg-white w-full h-auto flex-shrink-0">
                         <div
                           className="relative w-full h-full group"
                           onClick={() => setSelectedResult(idx)}
@@ -1221,8 +1279,9 @@ export function TryItSection() {
                           <ImageWithFallback
                             src={item.src}
                             alt={`Scene ${idx + 1}`}
-                            className="w-full h-full object-cover cursor-zoom-in generated-zoomable"
+                            className="w-full h-auto object-contain cursor-zoom-in generated-zoomable block"
                             data-zoomable
+                            style={{ maxHeight: "70vh" }}
                           />
                           <div
                             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
@@ -1366,6 +1425,11 @@ export function TryItSection() {
         platform={browserLoginPlatform}
         onClose={() => setBrowserLoginOpen(false)}
         onLoginSuccess={handleBrowserLoginSuccess}
+      />
+
+      <ModeExplanationModal
+        isOpen={modeModalOpen}
+        onClose={() => setModeModalOpen(false)}
       />
 
       <style>{`

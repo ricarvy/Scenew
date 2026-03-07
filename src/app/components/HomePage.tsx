@@ -6,6 +6,8 @@ import { ShowcaseGallery } from "./ShowcaseGallery";
 import { FeaturesSection } from "./FeaturesSection";
 import { GradientDivider } from "./WarmGlow";
 
+import { WomenDayModal } from "./WomenDayModal";
+
 export function HomePage() {
   const location = useLocation();
 
@@ -23,6 +25,7 @@ export function HomePage() {
 
   return (
     <main>
+      <WomenDayModal />
       <HeroSection />
 
       <GradientDivider />

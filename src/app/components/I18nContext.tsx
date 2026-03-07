@@ -10,9 +10,42 @@ const translations = {
     navFeatures: "功能特性",
     navTry: "开始体验",
     navPricing: "定价",
+    navBlog: "博客",
     navLogin: "登录",
     navLogout: "退出登录",
+    navProfile: "个人主页",
+    navGenerations: "我的生成",
     langLabel: "中文",
+
+    // Blog
+    blogTitle: "博客",
+    blogSubtitle: "探索 AI 场景合成的最新动态与灵感",
+    blogReadMore: "阅读全文",
+    blogBack: "返回列表",
+    blogPublished: "发布于",
+    blogShare: "分享",
+
+    // Generations Page
+    myGenerationsTitle: "我的生成历史",
+    noGenerationsTitle: "暂无生成记录",
+    noGenerationsDesc: "快去体验第一次场景合成吧！",
+    viewDetails: "查看详情",
+    generatedScene: "生成场景",
+    downloadImage: "下载图片",
+
+    // Profile Modal
+    profileTitle: "个人主页",
+    profileUsername: "用户名",
+    profileEmail: "邮箱",
+    profilePassword: "密码",
+    profileRegisterDate: "注册时间",
+    profilePoints: "剩余点数",
+    profileEdit: "修改",
+    profileSave: "保存",
+    profileCancel: "取消",
+    profileChangePassword: "修改密码",
+    profilePointsUnit: "点",
+    profileLogout: "退出登录",
 
     // Hero
     heroTag: "SCENEW — AI 场景合成",
@@ -21,6 +54,13 @@ const translations = {
       "上传你的照片，粘贴商品链接，描述期望场景 —— AI 帮你合成「你与商品在场景中」的画面，让每次购物都有画面感。",
     heroStart: "开始体验",
     heroLearn: "了解更多",
+    heroRedeem: "3.8女神节兑换",
+    heroRedeemSuccess: "兑换成功！开始您的发现之旅",
+    heroRedeemCodeLabel: "兑换码",
+    heroRedeemCodePlaceholder: "请输入兑换码",
+    heroRedeemSubmit: "确认兑换",
+    heroRedeemCancel: "取消",
+    heroRedeemLoginFirst: "请先登录后再进行兑换",
 
     // HowItWorks
     howTag: "HOW IT WORKS",
@@ -34,7 +74,7 @@ const translations = {
     step3Desc:
       "「在巴黎街头散步」「在山顶露营」「在办公室开会」——你描述，AI 创造。",
     step4Title: "生成场景图",
-    step4Desc: "几秒内获得高质量合成图，用于购物决策和社交分享，让消费更有画面感。",
+    step4Desc: "几分钟内获得高质量合成图，用于购物决策和社交分享，让消费更有画面感。",
 
     // Showcase
     showTag: "SHOWCASE",
@@ -53,8 +93,8 @@ const translations = {
     // Features
     featTag: "FEATURES",
     featTitle: "为什么选择 Scenew",
-    feat1Title: "秒级生成",
-    feat1Desc: "基于先进 AI 模型，几秒内完成场景合成，支持批量处理。",
+    feat1Title: "分钟级生成",
+    feat1Desc: "基于先进 AI 模型，几分钟内完成场景合成，支持批量处理。",
     feat2Title: "隐私保护",
     feat2Desc: "照片仅用于当次生成，处理完成后自动删除，不会用于模型训练。",
     feat3Title: "全球电商",
@@ -203,7 +243,8 @@ const translations = {
     tryLinkAdded: "已添加",
     tryLinkInfoUnavailable: "暂未获取到商品详情",
     tryLinkRetry: "重试",
-
+    tryLinkUnsupported: "暂不支持该平台，目前仅支持淘宝/天猫链接",
+    
     // Browser Login Modal
     browserLoginTitle: "需要平台登录",
     browserLoginDesc: "该商品需要登录后才能访问，请在下方窗口完成登录",
@@ -211,6 +252,47 @@ const translations = {
     browserLoginConfirm: "登录完成",
     browserLoginCancel: "取消",
     browserLoginSuccess: "登录成功，正在重新获取商品信息…",
+
+    // Privacy Policy
+    privacyTitle: "隐私政策",
+    privacyLastUpdated: "最后更新：2026年3月7日",
+    privacyIntro: "Scenew（以下简称“我们”）非常重视您的隐私。本隐私政策旨在说明我们如何收集、使用、存储和保护您的个人信息。",
+    privacySection1: "1. 信息收集",
+    privacySection1Content: "我们收集您主动提供的信息，包括：注册账号时提供的邮箱和用户名；您上传的照片和商品链接（仅用于场景合成服务）；您的使用数据（如生成记录）。",
+    privacySection2: "2. 照片使用与存储",
+    privacySection2Content: "您上传的照片仅用于当次场景生成任务。除非您选择保存到“我的生成”，否则原始照片会在处理完成后24小时内自动删除。我们不会将您的照片用于模型训练或任何其他未经授权的用途。",
+    privacySection3: "3. 数据安全",
+    privacySection3Content: "我们采用行业标准的安全措施来保护您的数据，包括加密传输和安全存储。只有经过授权的人员才能访问您的个人信息。",
+    privacySection4: "4. 第三方服务",
+    privacySection4Content: "我们的服务可能包含指向第三方网站（如电商平台）的链接。我们不对这些第三方的隐私惯例负责，请您自行阅读其隐私政策。",
+    privacySection5: "5. 政策更新",
+    privacySection5Content: "我们可能会不时更新本隐私政策。重大变更时，我们会通过邮件或网站公告通知您。",
+    privacyContact: "联系我们：privacy@scenew.ai",
+
+    // Terms of Service
+    termsTitle: "服务条款",
+    termsLastUpdated: "最后更新：2026年3月7日",
+    termsIntro: "欢迎使用 Scenew。通过访问或使用我们的服务，即表示您同意受本条款的约束。",
+    termsSection1: "1. 账号注册",
+    termsSection1Content: "您需要注册账号才能使用部分功能。您有责任维护账号信息的保密性，并对该账号下的所有活动负责。",
+    termsSection2: "2. 服务内容",
+    termsSection2Content: "Scenew 提供基于 AI 的场景合成服务。我们致力于提供高质量的生成结果，但不保证生成内容完全符合您的预期。",
+    termsSection3: "3. 用户行为",
+    termsSection3Content: "您同意不利用本服务进行任何非法、侵权或有害的活动。严禁上传包含暴力、色情或侵犯他人版权的内容。",
+    termsSection4: "4. 知识产权",
+    termsSection4Content: "我们保留服务相关的所有知识产权。您对自己上传的内容拥有所有权，并授予我们为提供服务所需的有限使用许可。",
+    termsSection5: "5. 免责声明",
+    termsSection5Content: "本服务按“现状”提供，不包含任何明示或暗示的保证。我们不对因使用服务而产生的任何直接或间接损失负责。",
+    termsContact: "如有疑问，请联系：legal@scenew.ai",
+
+    // Mode Comparison Modal
+    modeComparisonTitle: "种草模式 vs 非种草模式",
+    modeComparisonDesc: "种草模式能够自动融合商品信息",
+    modeStandardTitle: "非种草模式（纯净版）",
+    modeStandardDesc: "生成纯净的场景合成图，专注于展示人与商品的融合效果，画面无额外干扰元素。",
+    modeGrassTitle: "种草模式（带货版）",
+    modeGrassDesc: "自动提取商品信息（如价格、店铺名），以精美的“购物卡片”形式融入画面，一键生成适合小红书/朋友圈的带货图。",
+    modeClose: "明白了",
   },
   en: {
     // Navbar
@@ -219,9 +301,42 @@ const translations = {
     navFeatures: "Features",
     navTry: "Try It",
     navPricing: "Pricing",
+    navBlog: "Blog",
     navLogin: "Login",
     navLogout: "Logout",
+    navProfile: "Profile",
+    navGenerations: "My Generations",
     langLabel: "EN",
+
+    // Blog
+    blogTitle: "Blog",
+    blogSubtitle: "Explore the latest trends and inspiration in AI scene synthesis",
+    blogReadMore: "Read More",
+    blogBack: "Back to Blog",
+    blogPublished: "Published on",
+    blogShare: "Share",
+
+    // Generations Page
+    myGenerationsTitle: "My Generations",
+    noGenerationsTitle: "No generations yet",
+    noGenerationsDesc: "Go ahead and create your first scene!",
+    viewDetails: "View Details",
+    generatedScene: "Generated Scene",
+    downloadImage: "Download Image",
+
+    // Profile Modal
+    profileTitle: "Profile",
+    profileUsername: "Username",
+    profileEmail: "Email",
+    profilePassword: "Password",
+    profileRegisterDate: "Joined",
+    profilePoints: "Credits",
+    profileEdit: "Edit",
+    profileSave: "Save",
+    profileCancel: "Cancel",
+    profileChangePassword: "Change Password",
+    profilePointsUnit: "pts",
+    profileLogout: "Logout",
 
     // Hero
     heroTag: "SCENEW — AI Scene Synthesis",
@@ -230,6 +345,13 @@ const translations = {
       "Upload your photo, paste a product link, describe your desired scene — AI creates a composite of you with the product in context, bringing every purchase to life.",
     heroStart: "Get Started",
     heroLearn: "Learn More",
+    heroRedeem: "Women's Day Redeem",
+    heroRedeemSuccess: "Redeemed successfully! Start your journey.",
+    heroRedeemCodeLabel: "Redemption Code",
+    heroRedeemCodePlaceholder: "Enter code",
+    heroRedeemSubmit: "Redeem",
+    heroRedeemCancel: "Cancel",
+    heroRedeemLoginFirst: "Please login to redeem",
 
     // HowItWorks
     howTag: "HOW IT WORKS",
@@ -245,7 +367,7 @@ const translations = {
       '"Walking in Paris streets" "Camping on a mountaintop" "Meeting at the office" — you describe, AI creates.',
     step4Title: "Generate Scene",
     step4Desc:
-      "Get high-quality composite images in seconds for shopping decisions and social sharing.",
+      "Get high-quality composite images in minutes for shopping decisions and social sharing.",
 
     // Showcase
     showTag: "SHOWCASE",
@@ -264,9 +386,9 @@ const translations = {
     // Features
     featTag: "FEATURES",
     featTitle: "Why Choose Scenew",
-    feat1Title: "Lightning Fast",
+    feat1Title: "Minutes Generation",
     feat1Desc:
-      "Powered by advanced AI models, scene synthesis completes in seconds with batch processing support.",
+      "Powered by advanced AI models, scene synthesis completes in minutes with batch processing support.",
     feat2Title: "Privacy First",
     feat2Desc:
       "Photos are used only for the current generation, auto-deleted after processing, never used for training.",
@@ -420,6 +542,7 @@ const translations = {
     tryLinkAdded: "Added",
     tryLinkInfoUnavailable: "Product details unavailable",
     tryLinkRetry: "Retry",
+    tryLinkUnsupported: "Platform not supported yet. Currently only Taobao/Tmall links are supported.",
 
     // Browser Login Modal
     browserLoginTitle: "Platform Login Required",
@@ -428,15 +551,59 @@ const translations = {
     browserLoginConfirm: "Login Complete",
     browserLoginCancel: "Cancel",
     browserLoginSuccess: "Login successful, re-fetching product info…",
+
+    // Privacy Policy
+    privacyTitle: "Privacy Policy",
+    privacyLastUpdated: "Last Updated: March 7, 2026",
+    privacyIntro: "Scenew (\"we\", \"us\", or \"our\") values your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information.",
+    privacySection1: "1. Information Collection",
+    privacySection1Content: "We collect information you provide, including: email and username upon registration; photos and product links you upload (solely for scene synthesis); and usage data.",
+    privacySection2: "2. Photo Usage & Storage",
+    privacySection2Content: "Photos you upload are used only for the current generation task. Unless you choose to save them to \"My Generations\", original photos are automatically deleted within 24 hours. We do not use your photos for model training or any unauthorized purpose.",
+    privacySection3: "3. Data Security",
+    privacySection3Content: "We use industry-standard security measures to protect your data, including encryption and secure storage. Only authorized personnel have access to your personal information.",
+    privacySection4: "4. Third-Party Services",
+    privacySection4Content: "Our service may contain links to third-party websites (e.g., e-commerce platforms). We are not responsible for their privacy practices. Please review their policies.",
+    privacySection5: "5. Policy Updates",
+    privacySection5Content: "We may update this policy from time to time. We will notify you of significant changes via email or website notice.",
+    privacyContact: "Contact us: privacy@scenew.ai",
+
+    // Terms of Service
+    termsTitle: "Terms of Service",
+    termsLastUpdated: "Last Updated: March 7, 2026",
+    termsIntro: "Welcome to Scenew. By accessing or using our service, you agree to be bound by these terms.",
+    termsSection1: "1. Account Registration",
+    termsSection1Content: "You must register an account to use certain features. You are responsible for maintaining the confidentiality of your account information and for all activities under your account.",
+    termsSection2: "2. Services",
+    termsSection2Content: "Scenew provides AI-based scene synthesis services. We strive to provide high-quality results but do not guarantee that generated content will fully meet your expectations.",
+    termsSection3: "3. User Conduct",
+    termsSection3Content: "You agree not to use the service for any illegal, infringing, or harmful activities. Uploading violent, pornographic, or copyright-infringing content is strictly prohibited.",
+    termsSection4: "4. Intellectual Property",
+    termsSection4Content: "We retain all intellectual property rights related to the service. You own the content you upload and grant us a limited license necessary to provide the service.",
+    termsSection5: "5. Disclaimer",
+    termsSection5Content: "The service is provided \"as is\" without warranties of any kind. We are not liable for any direct or indirect damages arising from the use of the service.",
+    termsContact: "Contact: legal@scenew.ai",
+
+    // Mode Comparison Modal
+    modeComparisonTitle: "Seeding Mode vs Standard Mode",
+    modeComparisonDesc: "Seeding Mode automatically integrates product info",
+    modeStandardTitle: "Standard Mode (Clean)",
+    modeStandardDesc: "Generates clean scene synthesis images, focusing on the blend of person and product without extra elements.",
+    modeGrassTitle: "Seeding Mode (Shopping Card)",
+    modeGrassDesc: "Automatically extracts product info (price, shop name) and integrates it as a stylish 'Shopping Card' into the image.",
+    modeClose: "Got it",
   },
 } as const;
 
 export type TranslationKey = keyof (typeof translations)["zh"];
 
 interface User {
+  id?: number | string; // Added id field
   username: string;
   email: string;
   avatar?: string;
+  credits?: number;
+  joinedDate?: string;
 }
 
 interface I18nContextType {
@@ -446,6 +613,7 @@ interface I18nContextType {
   user: User | null;
   login: (user: User) => void;
   logout: () => void;
+  redeem: (amount: number) => void;
 }
 
 const I18nContext = createContext<I18nContextType>({
@@ -455,6 +623,7 @@ const I18nContext = createContext<I18nContextType>({
   user: null,
   login: () => {},
   logout: () => {},
+  redeem: () => {},
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -479,8 +648,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token");
   };
 
+  const redeem = (amount: number) => {
+    if (user) {
+      const updatedUser = { ...user, credits: (user.credits || 0) + amount };
+      setUser(updatedUser);
+      localStorage.setItem("scenew_user", JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <I18nContext.Provider value={{ lang, setLang, t, user, login, logout }}>
+    <I18nContext.Provider value={{ lang, setLang, t, user, login, logout, redeem }}>
       {children}
     </I18nContext.Provider>
   );

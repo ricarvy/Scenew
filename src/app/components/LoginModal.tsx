@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { X, Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useI18n } from "./I18nContext";
 
@@ -6,6 +7,8 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToRegister: () => void;
+  initialEmail?: string;
+  initialPassword?: string;
 }
 
 function GoogleIcon() {
@@ -31,11 +34,12 @@ function GoogleIcon() {
   );
 }
 
-export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToRegister, initialEmail, initialPassword }: LoginModalProps) {
   const { t, login } = useI18n();
+  const navigate = useNavigate();
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(initialEmail || "");
+  const [password, setPassword] = useState(initialPassword || "");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,8 +47,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setEmail("");
-      setPassword("");
+      if (initialEmail) setEmail(initialEmail);
+      else setEmail("");
+
+      if (initialPassword) setPassword(initialPassword);
+      else setPassword("");
+
       setErrors({});
       setIsSubmitting(false);
       setShowPassword(false);
@@ -54,7 +62,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isOpen]);
+  }, [isOpen, initialEmail, initialPassword]);
 
   if (!isOpen) return null;
 
@@ -74,75 +82,43 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
     
     // Call backend login API
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
-      // The backend uses /auth/login (without /api prefix if API_BASE includes port 8910, 
-      // but usually API_BASE ends with /api? No, based on productScraper.ts it's just the host:port)
-      // Wait, productScraper says: `${API_BASE}/api/auth/login-page`
-      // User says: POST /auth/login
-      // Let's assume API_BASE is the root URL. 
-      // If user meant the path is /auth/login relative to root, we should check if we need /api prefix or not.
-      // Based on previous code: `${API_BASE}/api/auth/login`
-      // If user says "POST /auth/login", maybe they mean the path changed?
-      // Or maybe they mean the *resource* path.
-      // Let's stick to what's likely correct based on existing patterns, but adjust if needed.
-      // Existing productScraper uses /api/auth/...
-      // User input: "POST /auth/login"
-      // If the backend is FastAPI mounted at /, then it might be /auth/login directly.
-      // But if it's behind Nginx or router with /api prefix...
-      // Let's try /api/auth/login first as it was before, but if user explicitly says /auth/login...
-      // Let's look at productScraper.ts again.
-      // It uses `${API_BASE}/api/auth/login-page`.
-      // So if I use `${API_BASE}/auth/login`, it might be missing /api.
-      // However, user input is specific. Let's assume user means the *endpoint path* on the backend router.
-      // If previous code worked with /api/auth/login, I should keep /api if that's the convention.
-      // But user input might imply a change.
-      // Let's try to be safe. If user says "/auth/login", and API_BASE is "http://...:8910", then URL is "http://...:8910/auth/login".
-      // But if the backend is structured with /api prefix for everything...
-      // Let's check if productScraper.ts works. User said "productScraper works".
-      // productScraper uses /api/auth/login-page.
-      // So likely the prefix is /api/auth.
-      // But user said: "POST /auth/login".
-      // This is ambiguous. Does user mean "/api/auth/login" or literally "/auth/login"?
-      // Usually "POST /auth/login" means the route definition.
-      // If I look at the previous failed command output, it was 404 or something? No, it was just git error.
-      // Let's assume the user is correcting the path to be `/auth/login` (implying NO /api prefix? or maybe just describing the auth module?)
-      // Wait, standard practice: /api/v1/auth...
-      // Let's try to search for backend code if possible? No, I can't see backend code.
-      // Let's assume the user is giving the *exact* path relative to the domain.
-      // So I will change it to `/auth/login` and `/auth/register` (removing `/api` prefix if it was there, or adding it if needed).
-      // BUT, productScraper uses `/api/auth/...`.
-      // If I change Login to `/auth/login`, it might be inconsistent.
-      // Let's try to use `/api/auth/login` first (which is what I had).
-      // Wait, I already had `/api/auth/login` in the code I wrote in previous turn.
-      // And user said "无法调用后端的登录接口".
-      // Maybe the path IS `/auth/login` (without /api)?
-      // Let's try changing it to `${API_BASE}/auth/login` (removing /api).
+      // For local development, we use relative path which will be proxied by Vite
+      // to http://localhost:8000 as configured in vite.config.ts
+      const loginUrl = "/api/auth/login";
       
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(loginUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
+      console.log("Login response data:", data);
 
       if (!res.ok) {
         throw new Error(data.message || data.error || "Login failed");
       }
 
-      // Save token
-      if (data.token) localStorage.setItem("token", data.token);
+      // Save token (check common fields)
+      const token = data.token || data.access_token || data.accessToken;
+      if (token) {
+        localStorage.setItem("token", token);
+        console.log("Token saved to localStorage:", token.substring(0, 10) + "...");
+      } else {
+        console.error("Login successful but no token found in response:", data);
+      }
 
       // Update global user state
       // Assuming backend returns user info like { id, email, username, avatar? }
       // If not, use email as username fallback
       login({
+        id: data.id || data.user_id,
         username: data.username || email.split('@')[0],
         email: email,
         avatar: data.avatar
       });
 
-      alert(t("loginSuccess") || "Login successful!");
+      // alert(t("loginSuccess") || "Login successful!"); // Removed ugly alert
       onClose();
     } catch (err: any) {
       console.error("Login error:", err);
@@ -392,13 +368,13 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
             style={{ fontSize: "0.68rem", lineHeight: 1.6 }}
           >
             {t("loginTerms")}{" "}
-            <a href="#" className="text-primary underline underline-offset-2">
+            <button onClick={() => navigate("/terms")} className="text-primary underline underline-offset-2">
               {t("loginTermsLink")}
-            </a>{" "}
+            </button>{" "}
             {t("loginAnd")}{" "}
-            <a href="#" className="text-primary underline underline-offset-2">
+            <button onClick={() => navigate("/privacy")} className="text-primary underline underline-offset-2">
               {t("loginPrivacy")}
-            </a>
+            </button>
           </p>
         </div>
       </div>

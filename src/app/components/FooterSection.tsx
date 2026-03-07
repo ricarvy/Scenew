@@ -8,9 +8,11 @@ export function FooterSection() {
 
   const footerLinks = [
     { label: t("footerProduct"), href: "#" },
+    { label: t("footerBlog"), href: "/blog" },
     { label: t("footerPricing"), href: "/pricing" },
-    { label: t("footerBlog"), href: "#" },
     { label: t("footerAbout"), href: "#" },
+    { label: t("loginPrivacy"), href: "/privacy" },
+    { label: t("termsTitle"), href: "/terms" },
   ];
 
   return (

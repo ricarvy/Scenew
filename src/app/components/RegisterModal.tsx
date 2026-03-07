@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { X, User, Mail, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { useI18n } from "./I18nContext";
-
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSwitchToLogin: () => void;
+  onSwitchToLogin: (email?: string, password?: string) => void;
 }
 
 export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps) {
@@ -88,7 +87,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         setIsSubmitting(false);
         setSuccess(true);
         setTimeout(() => {
-          onSwitchToLogin();
+          onSwitchToLogin(email, password);
         }, 1800);
       } catch (err: any) {
         console.error("Register error:", err);
@@ -367,7 +366,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
               >
                 {t("registerHaveAccount")}{" "}
                 <button
-                  onClick={onSwitchToLogin}
+                  onClick={() => onSwitchToLogin()}
                   className="text-primary hover:underline underline-offset-2 transition-colors"
                 >
                   {t("registerLoginLink")}

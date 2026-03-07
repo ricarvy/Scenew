@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Menu, X, ChevronDown, Globe } from "lucide-react";
+import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon } from "lucide-react";
 import { useI18n, Lang } from "./I18nContext";
 import { LoginModal } from "./LoginModal";
 import { RegisterModal } from "./RegisterModal";
+import { ProfileModal } from "./ProfileModal";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -11,6 +12,7 @@ export function Navbar() {
   const [langOpen, setLangOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -50,6 +52,7 @@ export function Navbar() {
     { label: t("navHow"), href: "#how-it-works" },
     { label: t("navShowcase"), href: "#showcase" },
     { label: t("navFeatures"), href: "#features" },
+    { label: t("navBlog"), href: "/blog" },
     { label: t("navPricing"), href: "/pricing" },
     { label: t("navTry"), href: "/try" },
   ];
@@ -70,10 +73,22 @@ export function Navbar() {
     setTimeout(() => setRegisterOpen(true), 150);
   };
 
-  const handleSwitchToLogin = () => {
+  const handleSwitchToLogin = (email?: string, password?: string) => {
     setRegisterOpen(false);
-    setTimeout(() => setLoginOpen(true), 150);
+    setTimeout(() => {
+      setLoginOpen(true);
+      // We'll pass these props to LoginModal if it supports them, or store in state/ref
+      // But LoginModal is controlled. We should modify LoginModal to accept initial values.
+      // For now, let's just pass them as props to LoginModal component.
+      // We need to update LoginModal interface first.
+      if (email && password) {
+        // A simple way is to use a ref or state in Navbar to pass to LoginModal
+        setInitialLoginCredentials({ email, password });
+      }
+    }, 150);
   };
+
+  const [initialLoginCredentials, setInitialLoginCredentials] = useState<{email?: string, password?: string}>({});
 
   return (
     <>
@@ -107,8 +122,8 @@ export function Navbar() {
             SCENEW
           </a>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-7 flex-shrink min-w-0">
+          {/* Desktop nav - Centered */}
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-7">
             {navItems.map((item) => (
               <a
                 key={item.href}
@@ -132,7 +147,10 @@ export function Navbar() {
                 {item.label}
               </a>
             ))}
+          </div>
 
+          {/* Right side: Lang + Auth */}
+          <div className="hidden md:flex items-center gap-4 flex-shrink min-w-0">
             {/* Language switcher */}
             <div ref={langRef} className="relative">
               <button
@@ -204,6 +222,26 @@ export function Navbar() {
                       <p className="font-medium text-sm truncate">{user.username}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
+                    <button
+                      onClick={() => {
+                        navigate("/generations");
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                      {t("navGenerations")}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProfileOpen(true);
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      {t("navProfile")}
+                    </button>
                     <button
                       onClick={() => {
                         logout();
@@ -333,13 +371,22 @@ export function Navbar() {
 
       <LoginModal
         isOpen={loginOpen}
-        onClose={() => setLoginOpen(false)}
+        onClose={() => {
+          setLoginOpen(false);
+          setInitialLoginCredentials({});
+        }}
         onSwitchToRegister={handleSwitchToRegister}
+        initialEmail={initialLoginCredentials.email}
+        initialPassword={initialLoginCredentials.password}
       />
       <RegisterModal
         isOpen={registerOpen}
         onClose={() => setRegisterOpen(false)}
         onSwitchToLogin={handleSwitchToLogin}
+      />
+      <ProfileModal 
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
       />
 
       <style>{`

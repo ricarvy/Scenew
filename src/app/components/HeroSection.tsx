@@ -1,17 +1,23 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Typed from "typed.js";
 import { ArrowDown } from "lucide-react";
 import { useI18n } from "./I18nContext";
 import { GlowOrb } from "./WarmGlow";
 import { useNavigate } from "react-router";
+import { LoginModal } from "./LoginModal";
+import { RegisterModal } from "./RegisterModal";
+import { RedeemModal } from "./RedeemModal";
 
 export function HeroSection() {
   const titleRef = useRef<HTMLSpanElement>(null);
   const subtitleRef = useRef<HTMLSpanElement>(null);
   const titleTypedRef = useRef<Typed | null>(null);
   const subtitleTypedRef = useRef<Typed | null>(null);
-  const { t, lang } = useI18n();
+  const { t, lang, user } = useI18n();
   const navigate = useNavigate();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [redeemOpen, setRedeemOpen] = useState(false);
 
   useEffect(() => {
     titleTypedRef.current?.destroy();
@@ -129,14 +135,34 @@ export function HeroSection() {
             />
           </button>
           <button
-            className="px-8 py-3.5 border border-primary/20 rounded-full text-foreground transition-all duration-300 hover:border-primary/40 backdrop-blur-sm"
+            onClick={() => {
+              if (user) {
+                setRedeemOpen(true);
+              } else {
+                setLoginOpen(true);
+              }
+            }}
+            className="group relative px-8 py-3.5 rounded-full text-foreground transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
             style={{
               fontSize: "0.95rem",
               letterSpacing: "0.05em",
-              background: "rgba(196,149,106,0.04)",
+              background: "rgba(255,240,245,0.4)", // Light pink base
+              border: "1px solid rgba(232, 195, 186, 0.4)",
+              boxShadow: "0 0 20px rgba(232, 195, 186, 0.3), inset 0 0 10px rgba(255,255,255,0.5)"
             }}
           >
-            {t("heroLearn")}
+            {/* Inner flowing gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#E8C3BA]/40 to-transparent w-[200%] h-full animate-[shimmer_3s_infinite] -skew-x-12" />
+            
+            {/* Pink glow effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#F472B6]/20 via-[#E8C3BA]/30 to-[#F472B6]/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            {/* Sparkles */}
+            <span className="relative z-10 flex items-center gap-2 font-medium text-[#5C3D24]">
+              <span className="animate-pulse text-[#D4AF37]">✨</span>
+              {t("heroRedeem")}
+              <span className="animate-pulse text-[#D4AF37]" style={{ animationDelay: "0.5s" }}>✨</span>
+            </span>
           </button>
         </div>
       </div>
@@ -148,6 +174,34 @@ export function HeroSection() {
       >
         <ArrowDown className="w-5 h-5" />
       </button>
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-150%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSwitchToRegister={() => {
+          setLoginOpen(false);
+          setTimeout(() => setRegisterOpen(true), 150);
+        }}
+      />
+      <RegisterModal
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSwitchToLogin={(email, password) => {
+          setRegisterOpen(false);
+          setTimeout(() => setLoginOpen(true), 150);
+        }}
+      />
+      <RedeemModal
+        isOpen={redeemOpen}
+        onClose={() => setRedeemOpen(false)}
+      />
     </section>
   );
 }

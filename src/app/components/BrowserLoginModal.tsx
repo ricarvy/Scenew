@@ -270,18 +270,23 @@ export function BrowserLoginModal({
     []
   );
 
-  const handleConfirmLogin = async () => {
+  const handleConfirmLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (confirming) return; // Prevent double clicks
+    
     setConfirming(true);
     console.log("Confirm button clicked, calling API...");
     try {
       await confirmLogin(taskId);
       console.log("Login confirmed successfully");
-      onLoginSuccess();
+      // Give UI a moment to show success state before closing
+      setTimeout(() => {
+        onLoginSuccess();
+      }, 500);
     } catch (err: any) {
       console.error("Confirmation error:", err);
       setError(err.message || "Confirmation failed");
-    } finally {
-      setConfirming(false);
+      setConfirming(false); // Only reset on error
     }
   };
 
@@ -424,7 +429,7 @@ export function BrowserLoginModal({
             {t("browserLoginCancel")}
           </button>
           <button
-            onClick={handleConfirmLogin}
+            onClick={(e) => handleConfirmLogin(e)}
             disabled={!connected || confirming}
             className="px-5 py-2.5 rounded-xl text-primary-foreground transition-all duration-300 hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
             style={{
