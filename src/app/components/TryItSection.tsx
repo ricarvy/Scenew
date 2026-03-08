@@ -101,10 +101,7 @@ async function generateSceneImages(
     formData.append("links", JSON.stringify(formattedLinks));
     formData.append("scene", request.sceneDescription || " ");
     formData.append("mode", request.creativeMode || "copy");
-    
-    if (request.seedMode) {
-      formData.append("seed_mode", "true");
-    }
+    formData.append("seed_mode", request.seedMode ? "true" : "false");
     
     if (request.sceneImage) {
       formData.append("scene_image", request.sceneImage);
