@@ -268,7 +268,7 @@ const translations = {
     privacySection4Content: "我们的服务可能包含指向第三方网站（如电商平台）的链接。我们不对这些第三方的隐私惯例负责，请您自行阅读其隐私政策。",
     privacySection5: "5. 政策更新",
     privacySection5Content: "我们可能会不时更新本隐私政策。重大变更时，我们会通过邮件或网站公告通知您。",
-    privacyContact: "联系我们：privacy@scenew.ai",
+    privacyContact: "联系我们：scenewai@163.com",
 
     // Terms of Service
     termsTitle: "服务条款",
@@ -284,7 +284,7 @@ const translations = {
     termsSection4Content: "我们保留服务相关的所有知识产权。您对自己上传的内容拥有所有权，并授予我们为提供服务所需的有限使用许可。",
     termsSection5: "5. 免责声明",
     termsSection5Content: "本服务按“现状”提供，不包含任何明示或暗示的保证。我们不对因使用服务而产生的任何直接或间接损失负责。",
-    termsContact: "如有疑问，请联系：legal@scenew.ai",
+    termsContact: "如有疑问，请联系：scenewai@163.com",
 
     // Mode Comparison Modal
     modeComparisonTitle: "种草模式 vs 非种草模式",
