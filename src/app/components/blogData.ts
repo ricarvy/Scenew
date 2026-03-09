@@ -319,7 +319,7 @@ export const blogPosts: BlogPost[] = [
     coverImage: "https://images.unsplash.com/photo-1590501949668-2442efd4d3d7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBoZXNpdGF0aW5nJTIwcGhvbmUlMjBzY3JlZW4lMjBkYXJrJTIwcm9vbSUyMHdhcm0lMjBsaWdodHxlbnwxfHx8fDE3NzMwNDMzNjJ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
     author: {
       name: "Scenew AI Team",
-      avatar: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?q=80&w=100&auto=format&fit=crop"
+      avatar: "https://sceneu-online.oss-cn-shenzhen.aliyuncs.com/sceneu/20260310214300/generated/gen_0.jpg"
     },
     date: "2026-03-09",
     tags: ["品牌故事", "创作心路", "AI赋能"]
