@@ -288,17 +288,43 @@ export function Navbar() {
         {menuOpen && (
           <div className="md:hidden bg-background/95 backdrop-blur-xl border-b border-border/50 px-6 py-6 space-y-4">
             {user && (
-              <div className="flex items-center gap-3 pb-4 border-b border-border/40">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg overflow-hidden">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
-                  ) : (
-                    user.username.charAt(0).toUpperCase()
-                  )}
+              <div className="flex flex-col gap-4 pb-4 border-b border-border/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg overflow-hidden">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      user.username.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{user.username}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{user.username}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                
+                {/* Mobile User Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/generations");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                  >
+                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                    {t("navGenerations")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setProfileOpen(true);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                  >
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    {t("navProfile")}
+                  </button>
                 </div>
               </div>
             )}
