@@ -5,6 +5,7 @@ import { HowItWorks } from "./HowItWorks";
 import { ShowcaseGallery } from "./ShowcaseGallery";
 import { FeaturesSection } from "./FeaturesSection";
 import { GradientDivider } from "./WarmGlow";
+import { WelcomeLetterModal } from "./WelcomeLetterModal";
 
 
 
@@ -47,6 +48,7 @@ export function HomePage() {
       </div>
 
       <GradientDivider flip />
+      <WelcomeLetterModal />
     </main>
   );
 }

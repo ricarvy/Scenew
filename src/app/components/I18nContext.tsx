@@ -313,6 +313,12 @@ const translations = {
     pricingBetaModalTitle: "内测阶段说明",
     pricingBetaModalDesc: "当前产品处于内测阶段，暂不支持直接充值。如有需要，请联系 scenewai@163.com 获取邀请码以兑换资源包。",
     pricingBetaModalClose: "知道了",
+
+    // Welcome Letter
+    welcomeLetterTitle: "来自 Scenew 的一封信",
+    welcomeLetterOpen: "拆开信件",
+    welcomeLetterRead: "阅读全文",
+    welcomeLetterClose: "暂时收起",
   },
   en: {
     // Navbar
@@ -632,6 +638,12 @@ const translations = {
     feedbackError: "Submission failed, please try again",
     feedbackNetworkError: "Network error, please check connection",
     feedbackContentRequired: "Please enter feedback content",
+
+    // Welcome Letter
+    welcomeLetterTitle: "A Letter from Scenew",
+    welcomeLetterOpen: "Open Letter",
+    welcomeLetterRead: "Read Full Story",
+    welcomeLetterClose: "Close for now",
   },
 } as const;
 
