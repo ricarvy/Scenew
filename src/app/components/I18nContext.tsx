@@ -291,10 +291,18 @@ const translations = {
     modeGrassDesc: "自动提取商品信息（如价格、店铺名），以精美的“购物卡片”形式融入画面，一键生成适合小红书/朋友圈的带货图。",
     modeClose: "明白",
 
+    // Contact
+    contactLabel: "联系我们",
+    contactModalTitle: "联系我们",
+    contactModalDesc: "您可以通过右下角的会话窗口或发送邮件至以下邮箱与我们联系：",
+    contactEmail: "scenewai@163.com",
+    contactModalClose: "知道了",
+    
     // Feedback
     feedbackLabel: "意见反馈",
     feedbackTitle: "您的反馈对我们很重要",
     feedbackDesc: "帮助我们做得更好，期待您的宝贵建议",
+    feedbackContactHint: "如有其他问题，请联系：",
     feedbackPlaceholder: "请输入您的反馈内容...",
     feedbackSubmit: "提交反馈",
     feedbackSubmitting: "提交中...",
@@ -605,10 +613,18 @@ const translations = {
     modeGrassDesc: "Automatically extracts product info (price, shop name) and integrates it as a stylish 'Shopping Card' into the image.",
     modeClose: "Got it",
 
+    // Contact
+    contactLabel: "Contact Us",
+    contactModalTitle: "Contact Us",
+    contactModalDesc: "You can contact us via the chat window in the bottom right corner or email us at:",
+    contactEmail: "scenewai@163.com",
+    contactModalClose: "Got it",
+
     // Feedback
     feedbackLabel: "Feedback",
     feedbackTitle: "Your Feedback Matters",
     feedbackDesc: "Help us improve with your valuable suggestions",
+    feedbackContactHint: "For other questions, please contact:",
     feedbackPlaceholder: "Enter your feedback here...",
     feedbackSubmit: "Submit Feedback",
     feedbackSubmitting: "Submitting...",

@@ -58,13 +58,23 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const [contactOpen, setContactOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenContact = () => setContactOpen(true);
+    window.addEventListener('open-contact-modal', handleOpenContact);
+    return () => window.removeEventListener('open-contact-modal', handleOpenContact);
+  }, []);
+
   const navItems = [
     { label: t("navHow"), href: "#how-it-works" },
     { label: t("navShowcase"), href: "#showcase" },
     { label: t("navFeatures"), href: "#features" },
     { label: t("navBlog"), href: "/blog" },
     { label: t("navPricing"), href: "/pricing" },
+    { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
     { label: t("navTry"), href: "/try" },
+  ];label: t("navTry"), href: "/try" },
   ];
 
   const langOptions: { code: Lang; label: string; flag: string }[] = [
@@ -142,7 +152,9 @@ export function Navbar() {
                 style={{ fontSize: "0.8rem", letterSpacing: "0.05em" }}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (item.href.startsWith("/")) {
+                  if (item.onClick) {
+                    item.onClick();
+                  } else if (item.href.startsWith("/")) {
                     navigate(item.href);
                   } else if (item.href.startsWith("#")) {
                     if (location.pathname !== "/") {
@@ -348,7 +360,9 @@ export function Navbar() {
                 onClick={(e) => {
                   e.preventDefault();
                   setMenuOpen(false);
-                  if (item.href.startsWith("/")) {
+                  if (item.onClick) {
+                    item.onClick();
+                  } else if (item.href.startsWith("/")) {
                     navigate(item.href);
                   } else if (item.href.startsWith("#")) {
                     if (location.pathname !== "/") {
@@ -424,6 +438,42 @@ export function Navbar() {
         isOpen={profileOpen}
         onClose={() => setProfileOpen(false)}
       />
+
+      {/* Contact Modal */}
+      {contactOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setContactOpen(false)}
+          />
+          <div className="relative w-full max-w-sm bg-[#FDF9F4] rounded-2xl shadow-2xl p-6 transform transition-all scale-100 opacity-100">
+            <button 
+              onClick={() => setContactOpen(false)}
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-black/5 transition-colors"
+            >
+              <X className="w-5 h-5 text-[#5C3D24]" />
+            </button>
+            
+            <h3 className="text-xl font-serif text-[#5C3D24] mb-4 text-center">
+              {t("contactModalTitle")}
+            </h3>
+            <p className="text-sm text-muted-foreground text-center mb-6 leading-relaxed">
+              {t("contactModalDesc")}
+              <br />
+              <span className="font-medium text-[#A0714A] select-all mt-2 block">
+                {t("contactEmail")}
+              </span>
+            </p>
+            
+            <button
+              onClick={() => setContactOpen(false)}
+              className="w-full py-2.5 bg-[#5C3D24] text-white rounded-xl hover:bg-[#4A311D] transition-colors font-medium text-sm"
+            >
+              {t("contactModalClose")}
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes navDropIn {

@@ -85,6 +85,12 @@ export function FeedbackButton() {
               {t("feedbackDesc")}
             </p>
 
+            <div className="bg-[#A0714A]/5 rounded-xl p-3 mb-6 border border-[#A0714A]/10">
+              <p className="text-[11px] text-[#8B5E3C] text-center">
+                {t("feedbackContactHint")} <span className="font-medium select-all">{t("contactEmail")}</span>
+              </p>
+            </div>
+
             {/* Star Rating */}
             <div className="flex justify-center gap-2 mb-6">
               {[1, 2, 3, 4, 5].map((star) => (
