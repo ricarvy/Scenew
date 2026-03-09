@@ -289,9 +289,9 @@ const translations = {
     termsContact: "如有疑问，请联系：scenewai@163.com",
 
     // Mode Comparison Modal
-    modeComparisonTitle: "种草模式 vs 非种草模式",
+    modeComparisonTitle: "种草模式 vs 标准模式",
     modeComparisonDesc: "种草模式能够自动融合商品信息",
-    modeStandardTitle: "非种草模式（纯净版）",
+    modeStandardTitle: "标准模式（纯净版）",
     modeStandardDesc: "生成纯净的场景合成图，专注于展示人与商品的融合效果，画面无额外干扰元素。",
     modeGrassTitle: "种草模式（带货版）",
     modeGrassDesc: "自动提取商品信息（如价格、店铺名），以精美的“购物卡片”形式融入画面，一键生成适合小红书/朋友圈的带货图。",
@@ -624,11 +624,11 @@ const translations = {
 
     // Mode Comparison Modal
     modeComparisonTitle: "Seeding Mode vs Standard Mode",
-    modeComparisonDesc: "Seeding Mode automatically integrates product info",
+    modeComparisonDesc: "Seeding Mode automatically integrates product information",
     modeStandardTitle: "Standard Mode (Clean)",
     modeStandardDesc: "Generates clean scene synthesis images, focusing on the blend of person and product without extra elements.",
     modeGrassTitle: "Seeding Mode (Shopping Card)",
-    modeGrassDesc: "Automatically extracts product info (price, shop name) and integrates it as a stylish 'Shopping Card' into the image.",
+    modeGrassDesc: "Automatically extracts product information (price, shop name) and integrates it as a stylish 'Shopping Card' into the image.",
     modeClose: "Got it",
 
     // Contact
