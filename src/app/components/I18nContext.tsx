@@ -155,6 +155,7 @@ const translations = {
     tryModeNewInspiration: "新灵感",
     tryModeSeeding: "种草模式",
     tryBackHome: "返回首页",
+    tryGenerateFailed: "当前太火爆啦，重新试试吧～",
 
     // Footer
     footerSlogan: "让每次购物都有画面感",
@@ -485,6 +486,7 @@ const translations = {
     tryModeNewInspiration: "New Inspiration",
     tryModeSeeding: "Seeding Mode",
     tryBackHome: "Back to Home",
+    tryGenerateFailed: "It's too popular right now, please try again~",
 
     // Footer
     footerSlogan: "Bring every purchase to life",

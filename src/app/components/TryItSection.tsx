@@ -707,11 +707,11 @@ export function TryItSection() {
       })
       .catch((err) => {
         setIsGenerating(false);
-        setGenerateError(err.message || "生成失败");
+        setGenerateError(err.message || t("tryGenerateFailed"));
         const start = generateStartRef.current ?? performance.now();
         const seconds = ((performance.now() - start) / 1000).toFixed(1);
         const detail = typeof err?.message === "string" ? err.message : "";
-        toast.error(lang === "zh" ? "生成失败" : "Generation failed", {
+        toast.error(t("tryGenerateFailed"), {
           description: `${detail ? `${detail} · ` : ""}${lang === "zh" ? "本轮耗时" : "Time"} ${seconds}s`,
           duration: 10000,
         });
@@ -1305,7 +1305,7 @@ export function TryItSection() {
                     <AlertCircle className="w-6 h-6" style={{ color: "#c0392b" }} />
                   </div>
                   <p style={{ fontSize: "0.9rem", color: "#5C3D24" }}>
-                    {lang === "zh" ? "生成失败" : "Generation Failed"}
+                    {t("tryGenerateFailed")}
                   </p>
                   <p className="text-muted-foreground mt-2 max-w-xs" style={{ fontSize: "0.75rem" }}>
                     {generateError}
