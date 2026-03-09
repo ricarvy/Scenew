@@ -72,9 +72,8 @@ export function Navbar() {
     { label: t("navFeatures"), href: "#features" },
     { label: t("navBlog"), href: "/blog" },
     { label: t("navPricing"), href: "/pricing" },
-    { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
+  { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
     { label: t("navTry"), href: "/try" },
-  ];label: t("navTry"), href: "/try" },
   ];
 
   const langOptions: { code: Lang; label: string; flag: string }[] = [
