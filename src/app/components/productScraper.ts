@@ -1,9 +1,9 @@
 /**
  * Product scraper utility - calls backend /api/extract endpoint
- * Backend: http://120.24.150.216:8910
+ * Backend: http://8.212.18.47:8910
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 const REMOTE_DEBUGGING_PORT = import.meta.env.VITE_REMOTE_DEBUGGING_PORT;
 
 export interface ProductInfo {
