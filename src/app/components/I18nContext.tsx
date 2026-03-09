@@ -710,7 +710,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const fetchCostConfig = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_BASE_URL;
-        const url = API_BASE ? `${API_BASE}/auth/cost-config` : "/api/auth/cost-config";
+        // Use /auth/cost-config directly as defined in backend openapi.json
+        const url = API_BASE ? `${API_BASE}/auth/cost-config` : "/auth/cost-config";
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
@@ -761,8 +762,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE_URL;
-      // If API_BASE is defined, use it, otherwise fallback to /api proxy
-      const url = API_BASE ? `${API_BASE}/auth/me` : "/api/auth/me";
+      // Use /auth/me directly as defined in backend openapi.json
+      const url = API_BASE ? `${API_BASE}/auth/me` : "/auth/me";
       
       const res = await fetch(url, {
         headers: {

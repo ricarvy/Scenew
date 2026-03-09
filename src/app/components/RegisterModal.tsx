@@ -62,11 +62,10 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     const handleRegister = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_BASE_URL;
-        // If API_BASE is defined (e.g. in .env.hk), use it directly.
-        // Otherwise use the proxy path /api which redirects to localhost or target in vite.config
-        const url = API_BASE ? `${API_BASE}/auth/register` : "/api/auth/register";
+        // Use /auth/register directly as defined in backend openapi.json
+        const registerUrl = API_BASE ? `${API_BASE}/auth/register` : "/auth/register";
         
-        const res = await fetch(url, {
+        const res = await fetch(registerUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 

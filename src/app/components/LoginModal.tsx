@@ -84,7 +84,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister, initialEmail, 
     try {
       // Use API_BASE if available, otherwise use proxy
       const API_BASE = import.meta.env.VITE_API_BASE_URL;
-      const loginUrl = API_BASE ? `${API_BASE}/auth/login` : "/api/auth/login";
+      // Use /auth/login directly as defined in backend openapi.json
+      const loginUrl = API_BASE ? `${API_BASE}/auth/login` : "/auth/login";
       
       const res = await fetch(loginUrl, {
         method: "POST",

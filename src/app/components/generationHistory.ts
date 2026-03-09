@@ -42,8 +42,11 @@ export async function getGenerations(userId: number | string): Promise<Generatio
       return [];
     }
 
-    console.log("Sending request to /api/auth/user/history");
-    const response = await fetch(`/api/auth/user/history`, {
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+    // Use /auth/user/history directly as defined in backend openapi.json
+    const url = API_BASE ? `${API_BASE}/auth/user/history` : "/auth/user/history";
+    console.log(`Sending request to ${url}`);
+    const response = await fetch(url, {
       method: "GET", // Explicitly set method
       headers: {
         "Authorization": `Bearer ${token}`,
