@@ -22,6 +22,7 @@ export function PricingPage() {
       price: t("pricingPlan2Price"),
       points: t("pricingPlan2Points"),
       desc: t("pricingPlan2Desc"),
+      discount: t("pricingPlan2Discount"),
       icon: Star,
       popular: true,
     },
@@ -30,6 +31,7 @@ export function PricingPage() {
       price: t("pricingPlan3Price"),
       points: t("pricingPlan3Points"),
       desc: t("pricingPlan3Desc"),
+      discount: t("pricingPlan3Discount"),
       icon: Crown,
       popular: false,
     },
@@ -143,7 +145,7 @@ export function PricingPage() {
             </p>
 
             {/* Price */}
-            <div className="flex items-baseline justify-center gap-1 mb-2">
+            <div className="flex items-center justify-center gap-3 mb-2">
               <span
                 className="tracking-tight font-semibold"
                 style={{
@@ -153,6 +155,19 @@ export function PricingPage() {
               >
                 {t("pricingCurrency")} {plan.price}
               </span>
+              {/* Discount Badge */}
+              {plan.discount && (
+                <span 
+                  className="px-2 py-1 rounded-md text-xs font-medium"
+                  style={{
+                    backgroundColor: "rgba(212, 175, 55, 0.15)",
+                    color: "#A0714A",
+                    border: "1px solid rgba(160, 113, 74, 0.2)"
+                  }}
+                >
+                  {plan.discount}
+                </span>
+              )}
             </div>
             
             {/* Points Highlight */}
