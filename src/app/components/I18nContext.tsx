@@ -600,7 +600,7 @@ const translations = {
     privacySection4Content: "Our service may contain links to third-party websites (e.g., e-commerce platforms). We are not responsible for their privacy practices. Please review their policies.",
     privacySection5: "5. Policy Updates",
     privacySection5Content: "We may update this policy from time to time. We will notify you of significant changes via email or website notice.",
-    privacyContact: "Contact us: privacy@scenew.ai",
+    privacyContact: "Contact us: scenewai@163.com",
 
     // Terms of Service
     termsTitle: "Terms of Service",
@@ -616,7 +616,7 @@ const translations = {
     termsSection4Content: "We retain all intellectual property rights related to the service. You own the content you upload and grant us a limited license necessary to provide the service.",
     termsSection5: "5. Disclaimer",
     termsSection5Content: "The service is provided \"as is\" without warranties of any kind. We are not liable for any direct or indirect damages arising from the use of the service.",
-    termsContact: "Contact: legal@scenew.ai",
+    termsContact: "Contact: scenewai@163.com",
 
     // Mode Comparison Modal
     modeComparisonTitle: "Seeding Mode vs Standard Mode",
