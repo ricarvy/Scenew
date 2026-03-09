@@ -41,7 +41,8 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
     try {
       const token = localStorage.getItem("token");
       const API_BASE = import.meta.env.VITE_API_BASE_URL;
-      const url = API_BASE ? `${API_BASE}/auth/redeem` : "/api/auth/redeem";
+      // Use /auth/redeem directly as defined in backend openapi.json
+      const url = API_BASE ? `${API_BASE}/auth/redeem` : "/auth/redeem";
       
       const response = await fetch(url, {
         method: "POST",
@@ -54,22 +55,21 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok) {
         toast.success(data.message || t("heroRedeemSuccess"), {
-          description: `${t("heroRedeemCreditsAdded")}${data.points_added}`,
+          description: data.points_added ? `${t("heroRedeemCreditsAdded")}${data.points_added}` : undefined,
           duration: 4000,
-          position: "top-center"
         });
         
-        // Update local user points context
-        redeem(data.points_added);
+        // Update local user points context if function exists
+        if (redeem && data.points_added) {
+           redeem(data.points_added);
+        }
         
         // Close modal after success
         onClose();
       } else {
-        toast.error(t("heroRedeemFailed"), {
-          position: "top-center"
-        });
+        toast.error(data.detail || t("heroRedeemFailed"));
       }
     } catch (error) {
       console.error("Redeem error:", error);
