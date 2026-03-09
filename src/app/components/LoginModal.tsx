@@ -82,9 +82,9 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister, initialEmail, 
     
     // Call backend login API
     try {
-      // For local development, we use relative path which will be proxied by Vite
-      // to http://localhost:8000 as configured in vite.config.ts
-      const loginUrl = "/api/auth/login";
+      // Use API_BASE if available, otherwise use proxy
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      const loginUrl = API_BASE ? `${API_BASE}/auth/login` : "/api/auth/login";
       
       const res = await fetch(loginUrl, {
         method: "POST",
@@ -115,7 +115,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister, initialEmail, 
         id: data.id || data.user_id,
         username: data.username || email.split('@')[0],
         email: email,
-        avatar: data.avatar
+        avatar: data.avatar,
+        credits: data.points
       });
 
       // alert(t("loginSuccess") || "Login successful!"); // Removed ugly alert

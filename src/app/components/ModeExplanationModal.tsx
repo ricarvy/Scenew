@@ -1,4 +1,5 @@
-import { X, Sparkles, Copy } from "lucide-react";
+import { useState } from "react";
+import { X, Sparkles, Copy, ZoomIn } from "lucide-react";
 import { useI18n } from "./I18nContext";
 
 interface ModeExplanationModalProps {
@@ -8,6 +9,7 @@ interface ModeExplanationModalProps {
 
 export function ModeExplanationModal({ isOpen, onClose }: ModeExplanationModalProps) {
   const { t } = useI18n();
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -48,13 +50,17 @@ export function ModeExplanationModal({ isOpen, onClose }: ModeExplanationModalPr
                 <h3 className="font-medium text-lg">{t("modeStandardTitle")}</h3>
               </div>
               
-              <div className="aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 mb-4 relative group">
+              <div 
+                className="aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 mb-4 relative group cursor-pointer"
+                onClick={() => setPreviewImage("https://sceneu-online.oss-cn-shenzhen.aliyuncs.com/webview/gen_1.jpg")}
+              >
                 <img 
-                  src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop" 
+                  src="https://sceneu-online.oss-cn-shenzhen.aliyuncs.com/webview/gen_1.jpg" 
                   alt="Standard Mode Result" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ZoomIn className="w-8 h-8 text-white mb-2" />
                   <p className="text-white text-sm font-medium px-4 text-center">Original Composition</p>
                 </div>
               </div>
@@ -75,25 +81,19 @@ export function ModeExplanationModal({ isOpen, onClose }: ModeExplanationModalPr
                 <h3 className="font-medium text-lg">{t("modeGrassTitle")}</h3>
               </div>
               
-              <div className="aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 mb-4 relative group border border-[#D4AF37]/20">
+              <div 
+                className="aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 mb-4 relative group border border-[#D4AF37]/20 cursor-pointer"
+                onClick={() => setPreviewImage("https://sceneu-online.oss-cn-shenzhen.aliyuncs.com/webview/seed_1.jpg")}
+              >
                 <img 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop" 
+                  src="https://sceneu-online.oss-cn-shenzhen.aliyuncs.com/webview/seed_1.jpg" 
                   alt="Grass-planting Mode Result" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                {/* Shopping Card Overlay Mockup */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-white/40 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                   <div className="flex gap-3 items-center">
-                     <div className="w-10 h-10 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=100&auto=format&fit=crop" className="w-full h-full object-cover" />
-                     </div>
-                     <div className="min-w-0">
-                       <p className="text-xs font-medium text-[#5C3D24] truncate">Vintage Trench Coat</p>
-                       <p className="text-[10px] text-muted-foreground truncate">Autumn Collection 2026</p>
-                     </div>
-                     <div className="ml-auto text-sm font-bold text-[#A0714A]">¥299</div>
-                   </div>
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ZoomIn className="w-8 h-8 text-white" />
                 </div>
+                {/* Shopping Card Overlay Mockup */}
               </div>
               
               <p className="text-sm text-[#8B5E3C] leading-relaxed mt-auto font-medium">
@@ -112,6 +112,29 @@ export function ModeExplanationModal({ isOpen, onClose }: ModeExplanationModalPr
           </button>
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+          style={{ animation: "fadeIn 0.2s ease-out" }}
+        >
+          <button 
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+            onClick={() => setPreviewImage(null)}
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img 
+            src={previewImage} 
+            alt="Preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} 
+            style={{ animation: "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          />
+        </div>
+      )}
 
       <style>{`
         @keyframes fadeIn {

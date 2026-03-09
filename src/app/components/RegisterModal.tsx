@@ -61,18 +61,17 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
     // Call backend register API
     const handleRegister = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://120.24.150.216:8910";
-        // User specified POST /auth/register
-        // Removing /api prefix based on login assumption, but double check consistency.
-        // Actually, if login failed with /api, maybe register also needs no /api?
-        // Or maybe user just gave the router path.
-        // Let's try /auth/register (without /api) to match the Login change.
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        // If API_BASE is defined (e.g. in .env.hk), use it directly.
+        // Otherwise use the proxy path /api which redirects to localhost or target in vite.config
+        const url = API_BASE ? `${API_BASE}/auth/register` : "/api/auth/register";
         
-        const res = await fetch(`${API_BASE}/auth/register`, {
+        const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            username, 
+            username,
+            full_name: username, // Backend might expect full_name
             email, 
             password 
           }),
@@ -81,7 +80,11 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || data.error || "Registration failed");
+          // If the user was actually created but backend returned error (e.g. email sending failed),
+          // we might want to treat it as success or at least warn the user.
+          // But 400 usually means bad request.
+          console.error("Register failed with status:", res.status, data);
+          throw new Error(data.message || data.detail || "Registration failed");
         }
 
         setIsSubmitting(false);
@@ -91,6 +94,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
         }, 1800);
       } catch (err: any) {
         console.error("Register error:", err);
+        // Display the actual error message from backend if available
         setErrors({ email: err.message || "Registration failed" });
         setIsSubmitting(false);
       }

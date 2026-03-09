@@ -1,11 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type Lang = "zh" | "en";
 
 const translations = {
   zh: {
     // Navbar
-    navHow: "工作原理",
+    navHow: "使用指南",
     navShowcase: "场景展示",
     navFeatures: "功能特性",
     navTry: "开始体验",
@@ -54,13 +54,17 @@ const translations = {
       "上传你的照片，粘贴商品链接，描述期望场景 —— AI 帮你合成「你与商品在场景中」的画面，让每次购物都有画面感。",
     heroStart: "开始体验",
     heroLearn: "了解更多",
-    heroRedeem: "3.8女神节兑换",
+    heroRedeem: "邀请码兑换",
     heroRedeemSuccess: "兑换成功！开始您的发现之旅",
     heroRedeemCodeLabel: "兑换码",
     heroRedeemCodePlaceholder: "请输入兑换码",
     heroRedeemSubmit: "确认兑换",
     heroRedeemCancel: "取消",
     heroRedeemLoginFirst: "请先登录后再进行兑换",
+    heroRedeemEnterCode: "请输入兑换码",
+    heroRedeemCreditsAdded: "点数 +",
+    heroRedeemFailed: "兑换码不可用",
+    heroRedeemNetworkError: "网络错误，请检查服务器连接",
 
     // HowItWorks
     howTag: "HOW IT WORKS",
@@ -108,7 +112,7 @@ const translations = {
 
     // TryIt
     tryTag: "TRY IT NOW",
-    tryTitle: "开始你的第一次场景合成",
+    tryTitle: "开启独一无二的生活旅程",
     tryTabCopy: "做同款",
     tryTabInspire: "新灵感",
     trySloganCopy: "经典之所以经典，因为总被模仿",
@@ -125,7 +129,7 @@ const translations = {
     tryPhotoUploaded: "已上传",
     tryPhotoChange: "更换照片",
     tryLinkLabel: "商品链接",
-    tryLinkPlaceholder: "粘贴商品链接...",
+    tryLinkPlaceholder: "粘贴商品链接，点击“添加”即可自动解析商品信息",
     trySceneLabel: "场景描述",
     trySceneOptional: "（可选）",
     tryScenePlaceholder:
@@ -160,33 +164,24 @@ const translations = {
     // Pricing
     pricingTag: "PRICING",
     pricingTitle: "选择适合你的方案",
-    pricingSubtitle: "从免费开始，随时升级解锁更多可能",
-    pricingMonthly: "月付",
-    pricingYearly: "年付",
-    pricingSave: "省 17%",
-    pricingFreeTitle: "Free",
-    pricingFreePrice: "0",
-    pricingFreePeriod: "/月",
-    pricingFreeDesc: "适合尝鲜体验",
-    pricingFreeF1: "每月 5 次场景合成",
-    pricingFreeF2: "标准画质输出",
-    pricingFreeF3: "基础场景模板",
-    pricingFreeF4: "水印标识",
-    pricingFreeCta: "免费开始",
-    pricingProTitle: "Pro",
-    pricingProPriceMonthly: "19.9",
-    pricingProPriceYearly: "199",
-    pricingProPeriodMonthly: "/月",
-    pricingProPeriodYearly: "/年",
-    pricingProDesc: "为创作者和重度用户打造",
-    pricingProF1: "无限次场景合成",
-    pricingProF2: "超高清画质输出",
-    pricingProF3: "全部高级场景模板",
-    pricingProF4: "无水印",
-    pricingProF5: "批量处理",
-    pricingProF6: "优先生成队列",
-    pricingProCta: "升级 Pro",
-    pricingCurrency: "HKD",
+    pricingSubtitle: "灵活充值，永久有效",
+    pricingPlan1Title: "基础包",
+    pricingPlan1Price: "19.9",
+    pricingPlan1Points: "200 点",
+    pricingPlan1Desc: "适合偶尔尝鲜",
+    pricingPlan2Title: "进阶包",
+    pricingPlan2Price: "49.9",
+    pricingPlan2Points: "600 点",
+    pricingPlan2Desc: "适合日常创作",
+    pricingPlan3Title: "专业包",
+    pricingPlan3Price: "69.9",
+    pricingPlan3Points: "1000 点",
+    pricingPlan3Desc: "适合重度用户",
+    pricingCurrency: "¥",
+    pricingBuy: "立即充值",
+    pricingFeature1: "无水印",
+    pricingFeature2: "永久有效",
+    pricingFeature3: "优先生成",
     pricingPopular: "最受欢迎",
 
     // Login Modal
@@ -292,11 +287,26 @@ const translations = {
     modeStandardDesc: "生成纯净的场景合成图，专注于展示人与商品的融合效果，画面无额外干扰元素。",
     modeGrassTitle: "种草模式（带货版）",
     modeGrassDesc: "自动提取商品信息（如价格、店铺名），以精美的“购物卡片”形式融入画面，一键生成适合小红书/朋友圈的带货图。",
-    modeClose: "明白了",
+    modeClose: "明白",
+
+    // Feedback
+    feedbackLabel: "意见反馈",
+    feedbackTitle: "您的反馈对我们很重要",
+    feedbackDesc: "帮助我们做得更好，期待您的宝贵建议",
+    feedbackPlaceholder: "请输入您的反馈内容...",
+    feedbackSubmit: "提交反馈",
+    feedbackSubmitting: "提交中...",
+    feedbackSuccess: "反馈提交成功",
+    feedbackError: "提交失败，请重试",
+    feedbackNetworkError: "网络错误，请检查连接",
+    feedbackContentRequired: "请输入反馈内容",
+    pricingBetaModalTitle: "内测阶段说明",
+    pricingBetaModalDesc: "当前产品处于内测阶段，暂不支持直接充值。如有需要，请联系 scenewai@163.com 获取邀请码以兑换资源包。",
+    pricingBetaModalClose: "知道了",
   },
   en: {
     // Navbar
-    navHow: "How It Works",
+    navHow: "User Guide",
     navShowcase: "Showcase",
     navFeatures: "Features",
     navTry: "Try It",
@@ -345,13 +355,17 @@ const translations = {
       "Upload your photo, paste a product link, describe your desired scene — AI creates a composite of you with the product in context, bringing every purchase to life.",
     heroStart: "Get Started",
     heroLearn: "Learn More",
-    heroRedeem: "Women's Day Redeem",
+    heroRedeem: "Redeem Code",
     heroRedeemSuccess: "Redeemed successfully! Start your journey.",
     heroRedeemCodeLabel: "Redemption Code",
     heroRedeemCodePlaceholder: "Enter code",
     heroRedeemSubmit: "Redeem",
     heroRedeemCancel: "Cancel",
     heroRedeemLoginFirst: "Please login to redeem",
+    heroRedeemEnterCode: "Please enter a redemption code",
+    heroRedeemCreditsAdded: "Credits +",
+    heroRedeemFailed: "Invalid redemption code",
+    heroRedeemNetworkError: "Network error. Please check server connection",
 
     // HowItWorks
     howTag: "HOW IT WORKS",
@@ -424,7 +438,7 @@ const translations = {
     tryPhotoUploaded: "Uploaded",
     tryPhotoChange: "Change Photo",
     tryLinkLabel: "Product Link",
-    tryLinkPlaceholder: "Paste product link...",
+    tryLinkPlaceholder: "Paste link and click 'Add' to auto-parse info",
     trySceneLabel: "Scene Description",
     trySceneOptional: "（Optional）",
     tryScenePlaceholder:
@@ -459,34 +473,28 @@ const translations = {
     // Pricing
     pricingTag: "PRICING",
     pricingTitle: "Choose Your Plan",
-    pricingSubtitle: "Start free, upgrade anytime to unlock more",
-    pricingMonthly: "Monthly",
-    pricingYearly: "Yearly",
-    pricingSave: "Save 17%",
-    pricingFreeTitle: "Free",
-    pricingFreePrice: "0",
-    pricingFreePeriod: "/mo",
-    pricingFreeDesc: "Perfect for trying out",
-    pricingFreeF1: "5 scene generations / month",
-    pricingFreeF2: "Standard quality output",
-    pricingFreeF3: "Basic scene templates",
-    pricingFreeF4: "Watermarked",
-    pricingFreeCta: "Get Started Free",
-    pricingProTitle: "Pro",
-    pricingProPriceMonthly: "19.9",
-    pricingProPriceYearly: "199",
-    pricingProPeriodMonthly: "/mo",
-    pricingProPeriodYearly: "/yr",
-    pricingProDesc: "For creators and power users",
-    pricingProF1: "Unlimited scene generations",
-    pricingProF2: "Ultra HD quality output",
-    pricingProF3: "All premium scene templates",
-    pricingProF4: "No watermark",
-    pricingProF5: "Batch processing",
-    pricingProF6: "Priority generation queue",
-    pricingProCta: "Upgrade to Pro",
-    pricingCurrency: "HKD",
+    pricingSubtitle: "Flexible top-up, valid forever",
+    pricingPlan1Title: "Basic",
+    pricingPlan1Price: "19.9",
+    pricingPlan1Points: "200 pts",
+    pricingPlan1Desc: "For casual use",
+    pricingPlan2Title: "Advanced",
+    pricingPlan2Price: "49.9",
+    pricingPlan2Points: "600 pts",
+    pricingPlan2Desc: "For regular creators",
+    pricingPlan3Title: "Pro",
+    pricingPlan3Price: "69.9",
+    pricingPlan3Points: "1000 pts",
+    pricingPlan3Desc: "For power users",
+    pricingCurrency: "¥",
+    pricingBuy: "Top Up",
+    pricingFeature1: "No Watermark",
+    pricingFeature2: "Valid Forever",
+    pricingFeature3: "Priority Queue",
     pricingPopular: "Most Popular",
+    pricingBetaModalTitle: "Beta Phase Notice",
+    pricingBetaModalDesc: "The product is currently in beta and does not support direct top-up. Please contact scenewai@163.com to get an invitation code for credit redemption.",
+    pricingBetaModalClose: "Got it",
 
     // Login Modal
     loginTitle: "Welcome to Scenew",
@@ -592,6 +600,21 @@ const translations = {
     modeGrassTitle: "Seeding Mode (Shopping Card)",
     modeGrassDesc: "Automatically extracts product info (price, shop name) and integrates it as a stylish 'Shopping Card' into the image.",
     modeClose: "Got it",
+
+    // Feedback
+    feedbackLabel: "Feedback",
+    feedbackTitle: "Your Feedback Matters",
+    feedbackDesc: "Help us improve with your valuable suggestions",
+    feedbackPlaceholder: "Enter your feedback here...",
+    feedbackSubmit: "Submit Feedback",
+    feedbackSubmitting: "Submitting...",
+    feedbackSuccess: "Feedback submitted successfully",
+    feedbackError: "Submission failed, please try again",
+    feedbackNetworkError: "Network error, please check connection",
+    feedbackContentRequired: "Please enter feedback content",
+    pricingBetaModalTitle: "Beta Phase Notice",
+    pricingBetaModalDesc: "The product is currently in beta and does not support direct top-up. Please contact scenewai@163.com to get an invitation code for credit redemption.",
+    pricingBetaModalClose: "Got it",
   },
 } as const;
 
@@ -606,6 +629,12 @@ interface User {
   joinedDate?: string;
 }
 
+export interface CostConfig {
+  cost_same_style: number;
+  cost_new_inspiration: number;
+  cost_seed_mode_extra: number;
+}
+
 interface I18nContextType {
   lang: Lang;
   setLang: (lang: Lang) => void;
@@ -614,6 +643,12 @@ interface I18nContextType {
   login: (user: User) => void;
   logout: () => void;
   redeem: (amount: number) => void;
+  refreshUser: () => Promise<void>;
+  costConfig: CostConfig | null;
+  isLoginOpen: boolean;
+  setLoginOpen: (open: boolean) => void;
+  isRegisterOpen: boolean;
+  setRegisterOpen: (open: boolean) => void;
 }
 
 const I18nContext = createContext<I18nContextType>({
@@ -624,6 +659,12 @@ const I18nContext = createContext<I18nContextType>({
   login: () => {},
   logout: () => {},
   redeem: () => {},
+  refreshUser: async () => {},
+  costConfig: null,
+  isLoginOpen: false,
+  setLoginOpen: () => {},
+  isRegisterOpen: false,
+  setRegisterOpen: () => {},
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -632,6 +673,35 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("scenew_user");
     return saved ? JSON.parse(saved) : null;
   });
+  const [costConfig, setCostConfig] = useState<CostConfig | null>(null);
+  const [isLoginOpen, setLoginOpen] = useState(false);
+  const [isRegisterOpen, setRegisterOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchCostConfig = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        const url = API_BASE ? `${API_BASE}/auth/cost-config` : "/api/auth/cost-config";
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          setCostConfig(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch cost config", err);
+      }
+    };
+    fetchCostConfig();
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+      setLoginOpen(true);
+    };
+    window.addEventListener("scenew:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("scenew:unauthorized", handleUnauthorized);
+  }, []);
 
   const t = (key: TranslationKey): string => {
     return translations[lang][key] || key;
@@ -656,8 +726,77 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      // If API_BASE is defined, use it, otherwise fallback to /api proxy
+      const url = API_BASE ? `${API_BASE}/auth/me` : "/api/auth/me";
+      
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+
+      if (!res.ok) {
+        console.error("Failed to refresh user info");
+        return;
+      }
+
+      const data = await res.json();
+      
+      // Update user state with fresh data
+      // Response format: { id, email, full_name, avatar_url, is_active, points }
+      setUser(prev => {
+        if (!prev) return null;
+        const updatedUser: User = {
+          ...prev,
+          id: data.id,
+          username: data.full_name || data.username || prev.username,
+          email: data.email,
+          avatar: data.avatar_url,
+          credits: data.points
+        };
+        localStorage.setItem("scenew_user", JSON.stringify(updatedUser));
+        return updatedUser;
+      });
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch user info once when app loads if token exists
+    const token = localStorage.getItem("token");
+    if (token && !user) {
+      refreshUser();
+    }
+  }, []);
+
   return (
-    <I18nContext.Provider value={{ lang, setLang, t, user, login, logout, redeem }}>
+    <I18nContext.Provider value={{ 
+      lang, 
+      setLang, 
+      t, 
+      user, 
+      login, 
+      logout, 
+      redeem,
+      refreshUser,
+      costConfig,
+      isLoginOpen,
+      setLoginOpen,
+      isRegisterOpen,
+      setRegisterOpen
+    }}>
       {children}
     </I18nContext.Provider>
   );

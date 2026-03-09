@@ -3,6 +3,7 @@ import { Navbar } from "./Navbar";
 import { ParticleBackground } from "./ParticleBackground";
 import { FooterSection } from "./FooterSection";
 import { NoiseOverlay } from "./WarmGlow";
+import { FeedbackButton } from "./FeedbackButton";
 
 export function Layout() {
   return (
@@ -11,6 +12,7 @@ export function Layout() {
       <ParticleBackground />
       <Navbar />
       <Outlet />
+      <FeedbackButton />
       <FooterSection />
     </div>
   );

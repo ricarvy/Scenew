@@ -10,13 +10,23 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
+  // const [loginOpen, setLoginOpen] = useState(false); // Moved to Context
+  // const [registerOpen, setRegisterOpen] = useState(false); // Moved to Context
   const [profileOpen, setProfileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { lang, setLang, t, user, logout } = useI18n();
+  const { 
+    lang, 
+    setLang, 
+    t, 
+    user, 
+    logout, 
+    isLoginOpen: loginOpen, 
+    setLoginOpen, 
+    isRegisterOpen: registerOpen, 
+    setRegisterOpen 
+  } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
 

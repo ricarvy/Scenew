@@ -1,35 +1,45 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useI18n } from "./I18nContext";
-import { Check, ArrowLeft, Sparkles, Zap } from "lucide-react";
+import { Check, ArrowLeft, Zap, Crown, Star, X } from "lucide-react";
 
 export function PricingPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [yearly, setYearly] = useState(false);
+  const [showBetaModal, setShowBetaModal] = useState(false);
 
-  const freeFeatures = [
-    t("pricingFreeF1"),
-    t("pricingFreeF2"),
-    t("pricingFreeF3"),
-    t("pricingFreeF4"),
+  const plans = [
+    {
+      title: t("pricingPlan1Title"),
+      price: t("pricingPlan1Price"),
+      points: t("pricingPlan1Points"),
+      desc: t("pricingPlan1Desc"),
+      icon: Zap,
+      popular: false,
+    },
+    {
+      title: t("pricingPlan2Title"),
+      price: t("pricingPlan2Price"),
+      points: t("pricingPlan2Points"),
+      desc: t("pricingPlan2Desc"),
+      icon: Star,
+      popular: true,
+    },
+    {
+      title: t("pricingPlan3Title"),
+      price: t("pricingPlan3Price"),
+      points: t("pricingPlan3Points"),
+      desc: t("pricingPlan3Desc"),
+      icon: Crown,
+      popular: false,
+    },
   ];
 
-  const proFeatures = [
-    t("pricingProF1"),
-    t("pricingProF2"),
-    t("pricingProF3"),
-    t("pricingProF4"),
-    t("pricingProF5"),
-    t("pricingProF6"),
+  const commonFeatures = [
+    t("pricingFeature1"),
+    t("pricingFeature2"),
+    t("pricingFeature3"),
   ];
-
-  const proPrice = yearly
-    ? t("pricingProPriceYearly")
-    : t("pricingProPriceMonthly");
-  const proPeriod = yearly
-    ? t("pricingProPeriodYearly")
-    : t("pricingProPeriodMonthly");
 
   return (
     <section className="relative min-h-screen pt-32 pb-24 px-6 overflow-hidden">
@@ -73,216 +83,161 @@ export function PricingPage() {
         <p className="text-muted-foreground" style={{ fontSize: "0.95rem" }}>
           {t("pricingSubtitle")}
         </p>
-
-        {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-3 mt-8">
-          <span
-            className={`transition-colors ${!yearly ? "text-foreground" : "text-muted-foreground"}`}
-            style={{ fontSize: "0.85rem" }}
-          >
-            {t("pricingMonthly")}
-          </span>
-          <button
-            onClick={() => setYearly(!yearly)}
-            className="relative w-12 h-6 rounded-full transition-colors duration-300"
-            style={{
-              background: yearly
-                ? "linear-gradient(135deg, #A0714A, #8B5E3C)"
-                : "rgba(196,149,106,0.2)",
-            }}
-            aria-label="Toggle billing period"
-          >
-            <div
-              className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300"
-              style={{
-                transform: yearly ? "translateX(26px)" : "translateX(2px)",
-              }}
-            />
-          </button>
-          <span
-            className={`transition-colors ${yearly ? "text-foreground" : "text-muted-foreground"}`}
-            style={{ fontSize: "0.85rem" }}
-          >
-            {t("pricingYearly")}
-          </span>
-          {yearly && (
-            <span
-              className="inline-block px-2.5 py-0.5 rounded-full"
-              style={{
-                fontSize: "0.7rem",
-                color: "#8B5E3C",
-                background: "rgba(196,149,106,0.12)",
-                border: "1px solid rgba(196,149,106,0.15)",
-              }}
-            >
-              {t("pricingSave")}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Cards */}
-      <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6 md:gap-8">
-        {/* Free Plan */}
-        <div
-          className="relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1"
-          style={{
-            background: "rgba(255,252,248,0.7)",
-            border: "1px solid rgba(196,149,106,0.12)",
-            boxShadow: "0 4px 24px rgba(139,94,60,0.04)",
-          }}
-        >
-          <div className="flex items-center gap-2.5 mb-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg, rgba(196,149,106,0.1) 0%, rgba(212,165,116,0.08) 100%)",
-              }}
-            >
-              <Zap className="w-4 h-4" style={{ color: "#A0714A" }} />
-            </div>
-            <h3 style={{ color: "#5C3D24" }}>{t("pricingFreeTitle")}</h3>
-          </div>
-          <p className="text-muted-foreground mb-6" style={{ fontSize: "0.82rem" }}>
-            {t("pricingFreeDesc")}
-          </p>
-
-          {/* Price */}
-          <div className="flex items-baseline gap-1 mb-8">
-            <span
-              className="tracking-tight"
-              style={{
-                fontSize: "2.8rem",
-                color: "#5C3D24",
-              }}
-            >
-              {t("pricingCurrency")} {t("pricingFreePrice")}
-            </span>
-            <span className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
-              {t("pricingFreePeriod")}
-            </span>
-          </div>
-
-          {/* CTA */}
-          <button
-            className="w-full py-3 rounded-xl transition-all duration-300 hover:shadow-md mb-8"
-            style={{
-              fontSize: "0.85rem",
-              color: "#8B5E3C",
-              background: "rgba(196,149,106,0.08)",
-              border: "1px solid rgba(196,149,106,0.18)",
-            }}
-          >
-            {t("pricingFreeCta")}
-          </button>
-
-          {/* Features */}
-          <ul className="space-y-3.5">
-            {freeFeatures.map((f, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{ background: "rgba(196,149,106,0.1)" }}
-                >
-                  <Check className="w-3 h-3" style={{ color: "#A0714A" }} />
-                </div>
-                <span className="text-muted-foreground" style={{ fontSize: "0.82rem" }}>
-                  {f}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Pro Plan */}
-        <div
-          className="relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1"
-          style={{
-            background: "linear-gradient(170deg, rgba(255,252,248,0.95) 0%, rgba(250,244,235,0.95) 100%)",
-            border: "1px solid rgba(160,113,74,0.18)",
-            boxShadow: "0 8px 40px rgba(139,94,60,0.1), 0 2px 12px rgba(139,94,60,0.06)",
-          }}
-        >
-          {/* Popular badge */}
+      <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6 md:gap-8">
+        {plans.map((plan, index) => (
           <div
-            className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full"
+            key={index}
+            className={`relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
+              plan.popular ? "md:-mt-4 md:mb-4" : ""
+            }`}
             style={{
-              fontSize: "0.7rem",
-              letterSpacing: "0.08em",
-              color: "#fff",
-              background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
-              boxShadow: "0 4px 12px rgba(139,94,60,0.25)",
+              background: plan.popular 
+                ? "linear-gradient(170deg, rgba(255,252,248,0.95) 0%, rgba(250,244,235,0.95) 100%)"
+                : "rgba(255,252,248,0.7)",
+              border: plan.popular
+                ? "1px solid rgba(160,113,74,0.18)"
+                : "1px solid rgba(196,149,106,0.12)",
+              boxShadow: plan.popular
+                ? "0 8px 40px rgba(139,94,60,0.1), 0 2px 12px rgba(139,94,60,0.06)"
+                : "0 4px 24px rgba(139,94,60,0.04)",
             }}
           >
-            {t("pricingPopular")}
-          </div>
+            {/* Popular badge */}
+            {plan.popular && (
+              <div
+                className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full"
+                style={{
+                  fontSize: "0.7rem",
+                  letterSpacing: "0.08em",
+                  color: "#fff",
+                  background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                  boxShadow: "0 4px 12px rgba(139,94,60,0.25)",
+                }}
+              >
+                {t("pricingPopular")}
+              </div>
+            )}
 
-          <div className="flex items-center gap-2.5 mb-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
-                boxShadow: "0 2px 8px rgba(139,94,60,0.2)",
-              }}
-            >
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-center gap-2.5 mb-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{
+                  background: plan.popular
+                    ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                    : "linear-gradient(135deg, rgba(196,149,106,0.1) 0%, rgba(212,165,116,0.08) 100%)",
+                  boxShadow: plan.popular ? "0 2px 8px rgba(139,94,60,0.2)" : "none",
+                }}
+              >
+                <plan.icon 
+                  className="w-4 h-4" 
+                  style={{ color: plan.popular ? "#fff" : "#A0714A" }} 
+                />
+              </div>
+              <h3 style={{ color: "#5C3D24" }}>{plan.title}</h3>
             </div>
-            <h3 style={{ color: "#5C3D24" }}>{t("pricingProTitle")}</h3>
-          </div>
-          <p className="text-muted-foreground mb-6" style={{ fontSize: "0.82rem" }}>
-            {t("pricingProDesc")}
-          </p>
+            <p className="text-muted-foreground mb-6 text-center" style={{ fontSize: "0.82rem" }}>
+              {plan.desc}
+            </p>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-1 mb-8">
-            <span
-              className="tracking-tight"
+            {/* Price */}
+            <div className="flex items-baseline justify-center gap-1 mb-2">
+              <span
+                className="tracking-tight font-semibold"
+                style={{
+                  fontSize: "2.4rem",
+                  color: "#5C3D24",
+                }}
+              >
+                {t("pricingCurrency")} {plan.price}
+              </span>
+            </div>
+            
+            {/* Points Highlight */}
+            <div className="mb-8 font-medium text-center" style={{ color: "#A0714A", fontSize: "1.1rem" }}>
+              {plan.points}
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={() => setShowBetaModal(true)}
+              className={`w-full py-3 rounded-xl transition-all duration-300 hover:shadow-lg mb-8 mt-auto ${
+                plan.popular ? "hover:opacity-95" : "hover:shadow-md"
+              }`}
               style={{
-                fontSize: "2.8rem",
-                background: "linear-gradient(135deg, #8B5E3C, #A0714A)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                fontSize: "0.85rem",
+                color: plan.popular ? "#fff" : "#8B5E3C",
+                background: plan.popular
+                  ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                  : "rgba(196,149,106,0.08)",
+                border: plan.popular
+                  ? "none"
+                  : "1px solid rgba(196,149,106,0.18)",
+                boxShadow: plan.popular
+                  ? "0 4px 20px rgba(139,94,60,0.25)"
+                  : "none",
               }}
             >
-              {t("pricingCurrency")} {proPrice}
-            </span>
-            <span className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>
-              {proPeriod}
-            </span>
+              {t("pricingBuy")}
+            </button>
+
+            {/* Features */}
+            <ul className="space-y-3.5">
+              {commonFeatures.map((f, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{
+                      background: plan.popular
+                        ? "linear-gradient(135deg, rgba(160,113,74,0.15) 0%, rgba(196,149,106,0.1) 100%)"
+                        : "rgba(196,149,106,0.1)",
+                    }}
+                  >
+                    <Check className="w-3 h-3" style={{ color: "#8B5E3C" }} />
+                  </div>
+                  <span className="text-muted-foreground" style={{ fontSize: "0.82rem" }}>
+                    {f}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-
-          {/* CTA */}
-          <button
-            className="w-full py-3 rounded-xl text-white transition-all duration-300 hover:shadow-lg hover:opacity-95 mb-8"
-            style={{
-              fontSize: "0.85rem",
-              background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
-              boxShadow: "0 4px 20px rgba(139,94,60,0.25)",
-            }}
-          >
-            {t("pricingProCta")}
-          </button>
-
-          {/* Features */}
-          <ul className="space-y-3.5">
-            {proFeatures.map((f, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(160,113,74,0.15) 0%, rgba(196,149,106,0.1) 100%)",
-                  }}
-                >
-                  <Check className="w-3 h-3" style={{ color: "#8B5E3C" }} />
-                </div>
-                <span className="text-muted-foreground" style={{ fontSize: "0.82rem" }}>
-                  {f}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        ))}
       </div>
+
+      {/* Beta Notice Modal */}
+      {showBetaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowBetaModal(false)}
+          />
+          <div className="relative w-full max-w-sm bg-[#FDF9F4] rounded-2xl shadow-2xl p-6 transform transition-all scale-100 opacity-100">
+            <button 
+              onClick={() => setShowBetaModal(false)}
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-black/5 transition-colors"
+            >
+              <X className="w-5 h-5 text-[#5C3D24]" />
+            </button>
+            
+            <h3 className="text-xl font-serif text-[#5C3D24] mb-4 text-center">
+              {t("pricingBetaModalTitle")}
+            </h3>
+            <p className="text-sm text-muted-foreground text-center mb-6 leading-relaxed">
+              {t("pricingBetaModalDesc")}
+            </p>
+            
+            <button
+              onClick={() => setShowBetaModal(false)}
+              className="w-full py-2.5 bg-[#5C3D24] text-white rounded-xl hover:bg-[#4A311D] transition-colors font-medium text-sm"
+            >
+              {t("pricingBetaModalClose")}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

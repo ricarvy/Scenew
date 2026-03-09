@@ -120,6 +120,10 @@ async function generateSceneImages(
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      throw new Error("登录已过期，请重新登录");
+    }
     const errBody = await res.json().catch(() => ({}));
     console.error("Generate API Error:", errBody);
     
@@ -396,7 +400,7 @@ function ProductCard({
 
 // ── Main Component ──────────────────────────────────────────
 export function TryItSection() {
-  const { t, lang } = useI18n();
+  const { t, lang, costConfig, user } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -432,6 +436,15 @@ export function TryItSection() {
   const [browserLoginPlatform, setBrowserLoginPlatform] = useState("");
   const [browserLoginLinkId, setBrowserLoginLinkId] = useState("");
   const zoomRef = useRef<ReturnType<typeof mediumZoom> | null>(null);
+
+  // Confirmation Modal State
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+
+  // Calculate total cost
+  const totalCost = (costConfig ? (
+    (creativeMode === "copy" ? costConfig.cost_same_style : costConfig.cost_new_inspiration) +
+    (seedMode ? costConfig.cost_seed_mode_extra : 0)
+  ) : 0);
 
   // GSAP animations
   useEffect(() => {
@@ -626,9 +639,9 @@ export function TryItSection() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleGenerate = () => {
+  const handleGenerateClick = () => {
     if (!validate()) return;
-
+    
     if (productLinks.some(l => l.status === "fetching")) {
       toast.warning(lang === "zh" ? "请等待商品链接解析完成" : "Please wait for product links to load");
       return;
@@ -639,6 +652,11 @@ export function TryItSection() {
       return;
     }
 
+    setConfirmModalOpen(true);
+  };
+
+  const handleGenerate = () => {
+    setConfirmModalOpen(false);
     generateStartRef.current = performance.now();
     setIsGenerating(true);
     setGenerated(false);
@@ -811,7 +829,7 @@ export function TryItSection() {
                   <button
                     key={mode}
                     onClick={() => setCreativeMode(mode)}
-                    className="flex-1 relative z-10 py-2.5 rounded-lg transition-all duration-300"
+                    className="flex-1 relative z-10 py-2.5 rounded-lg transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
                     style={{
                       fontSize: "0.85rem",
                       letterSpacing: "0.05em",
@@ -824,7 +842,16 @@ export function TryItSection() {
                         : "none",
                     }}
                   >
-                    {t(mode === "copy" ? "tryTabCopy" : "tryTabInspire")}
+                    <span>{t(mode === "copy" ? "tryTabCopy" : "tryTabInspire")}</span>
+                    {costConfig && (
+                      <span className={`text-[0.65rem] px-1.5 rounded-md ${
+                        creativeMode === mode 
+                          ? "bg-[#FAF6F0] text-[#A0714A] border border-[#A0714A]/20" 
+                          : "bg-transparent text-muted-foreground/60"
+                      }`}>
+                        {mode === "copy" ? costConfig.cost_same_style : costConfig.cost_new_inspiration} {t("profilePointsUnit")}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -852,13 +879,18 @@ export function TryItSection() {
               }}
             >
               <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
-                    <p className="font-medium flex items-center gap-1.5" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
-                      {lang === "zh" ? "种草模式" : "Seeding Mode"}
-                      <button 
-                        type="button"
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
+                      <p className="font-medium flex items-center gap-1.5" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
+                        {lang === "zh" ? "种草模式" : "Seeding Mode"}
+                        {costConfig && costConfig.cost_seed_mode_extra > 0 && (
+                          <span className="text-[0.65rem] px-1.5 py-0.5 rounded-md bg-[#FAF6F0] text-[#A0714A] border border-[#A0714A]/20">
+                            +{costConfig.cost_seed_mode_extra} {t("profilePointsUnit")}
+                          </span>
+                        )}
+                        <button 
+                          type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setModeModalOpen(true);
@@ -1170,6 +1202,7 @@ export function TryItSection() {
             )}
 
             {/* ── Scene description ── */}
+            {creativeMode === "inspire" && (
             <div>
               <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
                 {t("trySceneLabel")}
@@ -1215,10 +1248,11 @@ export function TryItSection() {
                 </div>
               )}
             </div>
+            )}
 
             {/* ── Generate button ── */}
             <button
-              onClick={handleGenerate}
+              onClick={handleGenerateClick}
               disabled={isGenerating}
               className="w-full py-4 rounded-xl transition-all duration-300 hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2 text-primary-foreground relative overflow-hidden group"
               style={{
@@ -1234,7 +1268,15 @@ export function TryItSection() {
                   {t("tryGenerating")}
                 </>
               ) : (
-                t("tryGenerate")
+                <div className="flex items-center justify-center gap-2 w-full">
+                  <span>{t("tryGenerate")}</span>
+                  {totalCost > 0 && (
+                    <span className="flex items-center gap-1 bg-black/10 px-2 py-0.5 rounded-lg text-[0.8em]">
+                      <span className="font-semibold">{totalCost}</span>
+                      <span className="text-[0.8em] opacity-80">{t("profilePointsUnit")}</span>
+                    </span>
+                  )}
+                </div>
               )}
             </button>
           </div>
@@ -1466,7 +1508,88 @@ export function TryItSection() {
         onClose={() => setModeModalOpen(false)}
       />
 
+      {/* Confirmation Modal */}
+      {confirmModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+          style={{ backdropFilter: "blur(4px)" }}
+        >
+          <div className="absolute inset-0 bg-black/60" onClick={() => setConfirmModalOpen(false)} />
+          
+          <div
+            className="relative w-full max-w-sm rounded-2xl p-6 bg-[#FDF9F4] shadow-2xl overflow-hidden"
+            style={{ animation: "modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}
+          >
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-[#FAF6F0] flex items-center justify-center mx-auto mb-4 border border-[#E6DCC9]">
+                <Sparkles className="w-6 h-6 text-[#A0714A]" />
+              </div>
+              <h3 className="text-lg font-semibold text-[#5C3D24]">
+                {lang === "zh" ? "确认生成场景" : "Confirm Generation"}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {lang === "zh" ? "本次生成将消耗点数" : "Points will be deducted"}
+              </p>
+            </div>
+
+            {/* Points details */}
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">{lang === "zh" ? "当前点数" : "Current Balance"}</span>
+                <span className="font-medium">{user?.credits || 0}</span>
+              </div>
+              
+              <div className="flex justify-between items-center text-sm py-2 border-t border-dashed border-[#E6DCC9]">
+                <span className="text-[#A0714A]">{lang === "zh" ? "本次消耗" : "Cost"}</span>
+                <span className="font-semibold text-[#A0714A]">- {totalCost}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-sm pt-2 border-t border-[#E6DCC9]">
+                <span className="font-medium text-[#5C3D24]">{lang === "zh" ? "预计剩余" : "Estimated Balance"}</span>
+                <span className={`font-semibold ${(user?.credits || 0) - totalCost < 0 ? "text-red-500" : "text-[#5C3D24]"}`}>
+                  {(user?.credits || 0) - totalCost}
+                </span>
+              </div>
+            </div>
+
+            {/* Tips */}
+            <div className="bg-[#FAF6F0] rounded-lg p-3 mb-6 flex gap-2 items-start">
+              <AlertCircle className="w-4 h-4 text-[#A0714A] flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {lang === "zh" 
+                  ? "放心，如果生成失败将不会扣除任何点数。点数仅在生成成功后扣除。" 
+                  : "Don't worry, no points will be deducted if generation fails."}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-[#E6DCC9] text-muted-foreground hover:bg-[#FAF6F0] transition-colors text-sm"
+              >
+                {lang === "zh" ? "取消" : "Cancel"}
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={(user?.credits || 0) < totalCost}
+                className="flex-1 py-2.5 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {(user?.credits || 0) < totalCost 
+                  ? (lang === "zh" ? "点数不足" : "Insufficient Points") 
+                  : (lang === "zh" ? "确认生成" : "Confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
+        @keyframes modalSlideUp {
+          from { opacity: 0; transform: translateY(20px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
         @keyframes productSlide {
           0% { transform: translateX(-100%); width: 40%; }
           50% { width: 60%; }

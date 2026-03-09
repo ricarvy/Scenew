@@ -9,7 +9,7 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { t, user, login, logout } = useI18n();
+  const { t, user, login, logout, refreshUser } = useI18n();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.username || "");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -17,10 +17,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [currentPassword, setCurrentPassword] = useState("");
 
   useEffect(() => {
-    if (isOpen && user) {
+    if (isOpen) {
+      refreshUser();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (user) {
       setNewUsername(user.username);
     }
-  }, [isOpen, user]);
+  }, [user]);
 
   if (!isOpen || !user) return null;
 

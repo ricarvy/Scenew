@@ -52,6 +52,9 @@ export async function getGenerations(userId: number | string): Promise<Generatio
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+      }
       console.error("Failed to fetch generation history:", response.statusText);
       return [];
     }

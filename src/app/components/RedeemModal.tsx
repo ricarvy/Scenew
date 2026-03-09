@@ -30,7 +30,9 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
 
   const handleRedeem = async () => {
     if (!code.trim()) {
-      toast.error("Please enter a redemption code");
+      toast.error(t("heroRedeemEnterCode"), {
+        position: "top-center"
+      });
       return;
     }
     
@@ -38,7 +40,10 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/auth/redeem", {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      const url = API_BASE ? `${API_BASE}/auth/redeem` : "/api/auth/redeem";
+      
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,8 +56,9 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
 
       if (response.ok && data.success) {
         toast.success(data.message || t("heroRedeemSuccess"), {
-          description: `Credits +${data.points_added}`,
+          description: `${t("heroRedeemCreditsAdded")}${data.points_added}`,
           duration: 4000,
+          position: "top-center"
         });
         
         // Update local user points context
@@ -61,11 +67,15 @@ export function RedeemModal({ isOpen, onClose }: RedeemModalProps) {
         // Close modal after success
         onClose();
       } else {
-        toast.error(data.message || "Redemption failed");
+        toast.error(t("heroRedeemFailed"), {
+          position: "top-center"
+        });
       }
     } catch (error) {
       console.error("Redeem error:", error);
-      toast.error("Network error. Please ensure the backend server is running on port 8000.");
+      toast.error(t("heroRedeemNetworkError"), {
+        position: "top-center"
+      });
     } finally {
       setIsSubmitting(false);
     }
