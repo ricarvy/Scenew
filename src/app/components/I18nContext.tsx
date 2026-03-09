@@ -632,9 +632,6 @@ const translations = {
     feedbackError: "Submission failed, please try again",
     feedbackNetworkError: "Network error, please check connection",
     feedbackContentRequired: "Please enter feedback content",
-    pricingBetaModalTitle: "Beta Phase Notice",
-    pricingBetaModalDesc: "The product is currently in beta and does not support direct top-up. Please contact scenewai@163.com to get an invitation code for credit redemption.",
-    pricingBetaModalClose: "Got it",
   },
 } as const;
 
