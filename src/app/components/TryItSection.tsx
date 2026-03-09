@@ -19,6 +19,8 @@ import {
   Package,
   Copy,
   HelpCircle,
+  Layers,
+  Lightbulb,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { useI18n } from "./I18nContext";
@@ -1359,6 +1361,30 @@ export function TryItSection() {
                             data-zoomable
                             style={{ maxHeight: "70vh" }}
                           />
+                          
+                          {/* Creative Mode & Seed Mode Badges */}
+                          <div className="absolute top-3 left-3 flex flex-col gap-2 z-20 pointer-events-none">
+                            <div className="backdrop-blur-md bg-black/40 text-white px-2 py-1.5 rounded-lg flex items-center gap-1.5 border border-white/10 shadow-sm">
+                              {creativeMode === "copy" ? (
+                                <Layers className="w-3.5 h-3.5" />
+                              ) : (
+                                <Lightbulb className="w-3.5 h-3.5" />
+                              )}
+                              <span className="text-[0.65rem] font-medium leading-none pb-[1px]">
+                                {t(creativeMode === "copy" ? "tryModeSameStyle" : "tryModeNewInspiration")}
+                              </span>
+                            </div>
+
+                            {seedMode && (
+                              <div className="backdrop-blur-md bg-[#A0714A]/90 text-white px-2 py-1.5 rounded-lg flex items-center gap-1.5 border border-white/10 shadow-sm">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                                <span className="text-[0.65rem] font-medium leading-none pb-[1px]">
+                                  {t("tryModeSeeding")}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
                           <div
                             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                             style={{ background: "linear-gradient(to top, rgba(44,31,20,0.55) 0%, transparent 50%)" }}
@@ -1456,6 +1482,7 @@ export function TryItSection() {
                     </div>
                   </div>
                   <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>{t("tryPreviewGenerating")}</p>
+                  <p className="text-muted-foreground/60 mt-2 text-center max-w-[80%]" style={{ fontSize: "0.75rem" }}>{t("tryPreviewBackgroundTask")}</p>
                   <div className="flex gap-3 mt-4">
                     {[0, 1, 2, 3].map((i) => (
                       <div key={i} className="w-2 h-2 rounded-full animate-pulse" style={{ background: "rgba(160,113,74,0.3)", animationDelay: `${i * 0.3}s` }} />

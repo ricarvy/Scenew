@@ -146,10 +146,14 @@ const translations = {
     tryPreview: "场景预览",
     tryPreviewHint: "上传照片并填写商品链接后点击生成",
     tryPreviewGenerating: "正在进入你的专属平行宇宙",
+    tryPreviewBackgroundTask: "已生成后台任务，刷新/跳转页面均不影响生成，可在“我的生成”下查看生成结果",
     tryValidationPhoto: "请先上传你的照片",
     tryValidationLink: "请粘贴商品链接",
     tryResultTitle: "探索专属于你的另一个自己",
     tryResultRegenerate: "重新生成",
+    tryModeSameStyle: "做同款",
+    tryModeNewInspiration: "新灵感",
+    tryModeSeeding: "种草模式",
     tryBackHome: "返回首页",
 
     // Footer
@@ -471,10 +475,14 @@ const translations = {
     tryPreview: "Scene Preview",
     tryPreviewHint: "Upload photo and paste product link to generate",
     tryPreviewGenerating: "Entering your exclusive parallel universe...",
+    tryPreviewBackgroundTask: "Background task started. You can refresh or leave the page. Check results in 'My Generations'.",
     tryValidationPhoto: "Please upload your photo first",
     tryValidationLink: "Please paste product link",
     tryResultTitle: "Explore another version of yourself",
     tryResultRegenerate: "Regenerate",
+    tryModeSameStyle: "Same Style",
+    tryModeNewInspiration: "New Inspiration",
+    tryModeSeeding: "Seeding Mode",
     tryBackHome: "Back to Home",
 
     // Footer
