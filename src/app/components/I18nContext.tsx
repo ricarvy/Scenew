@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+import { toast } from "sonner";
+
 export type Lang = "zh" | "en";
 
 const translations = {
@@ -156,6 +158,8 @@ const translations = {
     tryModeSeeding: "种草模式",
     tryBackHome: "返回首页",
     tryGenerateFailed: "当前太火爆啦，重新试试吧～",
+    loginExpired: "登录已失效，请重新登录",
+    loginExpiredEn: "Session expired, please login again",
 
     // Footer
     footerSlogan: "让每次购物都有画面感",
@@ -487,6 +491,7 @@ const translations = {
     tryModeSeeding: "Seeding Mode",
     tryBackHome: "Back to Home",
     tryGenerateFailed: "It's too popular right now, please try again~",
+    loginExpired: "Session expired, please login again",
 
     // Footer
     footerSlogan: "Bring every purchase to life",
@@ -736,18 +741,23 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     fetchCostConfig();
   }, []);
 
+  const t = (key: TranslationKey): string => {
+    return translations[lang][key] || key;
+  };
+
   useEffect(() => {
     const handleUnauthorized = () => {
       logout();
       setLoginOpen(true);
+      toast.error(t("loginExpired"));
     };
     window.addEventListener("scenew:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("scenew:unauthorized", handleUnauthorized);
-  }, []);
-
-  const t = (key: TranslationKey): string => {
-    return translations[lang][key] || key;
-  };
+  }, [lang]); // Add lang dependency to update t() context if needed, though t is stable in this scope structure usually. Better to use ref or stable t.
+  
+  // Actually t depends on lang state which changes.
+  // To avoid re-binding event listener on lang change, we can use a ref for current lang or just let it re-bind.
+  // Re-binding is cheap enough here.
 
   const login = (userData: User) => {
     setUser(userData);

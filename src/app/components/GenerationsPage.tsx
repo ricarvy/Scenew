@@ -34,6 +34,12 @@ export function GenerationsPage() {
       }).catch(err => {
         console.error("Failed to fetch generations", err);
         setLoading(false);
+        // If the error is Unauthorized (from generationHistory.ts), the I18nContext listener will handle the modal
+        // But we can also show a toast or redirect here if needed.
+        if (err.message === "Unauthorized") {
+             // Let the event listener in I18nContext handle the login modal
+             // We just stop loading
+        }
       });
     } else {
        // If no user, maybe redirect or show empty
