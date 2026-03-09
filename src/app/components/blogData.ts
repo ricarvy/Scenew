@@ -17,7 +17,7 @@ export const blogPosts: BlogPost[] = [
   {
     id: "1",
     slug: "your-image-deserves-to-be-seen",
-    title: "你心里的那张图，值得被世界看见",
+    title: "写在前面的话——你心里的那张图，值得被世界看见",
     excerpt: "有些话，在心里转了很多圈，最后还是咽了回去。有些图，在脑海里已经完整得像一幅画，却始终没能变成手机相册里的任何一张。这篇文章，是写给你的。",
     content: `
       <p><em>——写给每一个「差一点就放弃表达」的人</em></p>
