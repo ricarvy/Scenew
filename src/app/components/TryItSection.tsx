@@ -1020,10 +1020,13 @@ export function TryItSection() {
             {/* ── Product Links (multi) ── */}
             <div>
               <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 flex-wrap">
                   <ShoppingBag className="w-3.5 h-3.5" />
                   {t("tryLinkLabel")}
                   <span className="text-red-400">*</span>
+                  <span className="text-muted-foreground/60 ml-2 font-normal normal-case tracking-normal" style={{ fontSize: "0.7rem" }}>
+                    ({t("tryLinkSupportHint")})
+                  </span>
                   {productLinks.length > 0 && (
                     <span
                       className="ml-auto px-2 py-0.5 rounded-full"

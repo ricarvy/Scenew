@@ -245,6 +245,7 @@ const translations = {
     tryLinkInfoUnavailable: "暂未获取到商品详情",
     tryLinkRetry: "重试",
     tryLinkUnsupported: "暂不支持该平台，目前仅支持淘宝/天猫链接",
+    tryLinkSupportHint: "当前仅支持淘宝/天猫链接",
     
     // Browser Login Modal
     browserLoginTitle: "需要平台登录",
@@ -577,6 +578,7 @@ const translations = {
     tryLinkInfoUnavailable: "Product details unavailable",
     tryLinkRetry: "Retry",
     tryLinkUnsupported: "Platform not supported yet. Currently only Taobao/Tmall links are supported.",
+    tryLinkSupportHint: "Currently only supports Taobao/Tmall links",
 
     // Browser Login Modal
     browserLoginTitle: "Platform Login Required",
