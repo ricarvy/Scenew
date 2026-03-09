@@ -35,7 +35,11 @@ export function WelcomeLetterModal() {
   };
 
   const handleReadMore = () => {
-    handleClose();
+    // Mark as seen so it doesn't pop up again
+    localStorage.setItem("scenew_welcome_letter_seen", "true");
+    // Close modal
+    setIsOpen(false);
+    // Navigate to specific blog post
     navigate("/blog/your-image-deserves-to-be-seen");
   };
 
