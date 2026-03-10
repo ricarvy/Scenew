@@ -307,6 +307,7 @@ const translations = {
     contactModalDesc: "您可以通过右下角的会话窗口或发送邮件至以下邮箱与我们联系：",
     contactEmail: "scenewai@163.com",
     contactModalClose: "知道了",
+    contactModalEmailHint: "scenewai@163.com",
     
     // Feedback
     feedbackLabel: "意见反馈",
@@ -642,6 +643,7 @@ const translations = {
     contactModalDesc: "You can contact us via the chat window in the bottom right corner or email us at:",
     contactEmail: "scenewai@163.com",
     contactModalClose: "Got it",
+    contactModalEmailHint: "scenewai@163.com",
 
     // Feedback
     feedbackLabel: "Feedback",

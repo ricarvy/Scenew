@@ -460,7 +460,7 @@ export function Navbar() {
               {t("contactModalDesc")}
               <br />
               <span className="font-medium text-[#A0714A] select-all mt-2 block">
-                {t("contactEmail")}
+                {t("contactModalEmailHint")}
               </span>
             </p>
             

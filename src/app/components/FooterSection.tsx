@@ -10,11 +10,9 @@ export function FooterSection() {
     { label: t("footerProduct"), href: "#" },
     { label: t("footerBlog"), href: "/blog" },
     { label: t("footerPricing"), href: "/pricing" },
-    { label: t("contactLabel"), href: "#contact", onClick: (e: React.MouseEvent) => {
+    { label: t("contactLabel"), href: "#", onClick: (e: React.MouseEvent) => {
       e.preventDefault();
-      // Since Navbar handles the contact modal, we can use a custom event or a shared state
-      // For simplicity, let's just trigger the same logic if we can access it
-      window.dispatchEvent(new CustomEvent('open-contact-modal'));
+      window.dispatchEvent(new CustomEvent("open-contact-modal"));
     }},
     { label: t("footerAbout"), href: "#" },
     { label: t("loginPrivacy"), href: "/privacy" },
@@ -81,6 +79,10 @@ export function FooterSection() {
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   style={{ fontSize: "0.85rem" }}
                   onClick={(e) => {
+                    if (item.onClick) {
+                      item.onClick(e);
+                      return;
+                    }
                     if (item.href.startsWith("/")) {
                       e.preventDefault();
                       navigate(item.href);
