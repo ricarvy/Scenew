@@ -31,6 +31,7 @@ const translations = {
     myGenerationsTitle: "我的生成历史",
     noGenerationsTitle: "暂无生成记录",
     noGenerationsDesc: "快去体验第一次场景合成吧！",
+    noGenerationsHint: "如果已有生成记录但无法正常显示，请退出当前登录账号后重新登录",
     viewDetails: "查看详情",
     generatedScene: "生成场景",
     downloadImage: "下载图片",
@@ -159,7 +160,6 @@ const translations = {
     tryBackHome: "返回首页",
     tryGenerateFailed: "当前太火爆啦，重新试试吧～",
     loginExpired: "登录已失效，请重新登录",
-    loginExpiredEn: "Session expired, please login again",
 
     // Footer
     footerSlogan: "让每次购物都有画面感",
@@ -357,6 +357,7 @@ const translations = {
     myGenerationsTitle: "My Generations",
     noGenerationsTitle: "No generations yet",
     noGenerationsDesc: "Go ahead and create your first scene!",
+    noGenerationsHint: "If you have existing generation records but they are not displaying correctly, please log out and log in again.",
     viewDetails: "View Details",
     generatedScene: "Generated Scene",
     downloadImage: "Download Image",

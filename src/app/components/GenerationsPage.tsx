@@ -99,7 +99,8 @@ export function GenerationsPage() {
           <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-[#E8C3BA]/20">
             <ImageIcon className="w-16 h-16 mx-auto text-[#E8C3BA] mb-4 opacity-50" />
             <h3 className="text-lg font-medium text-[#5C3D24] mb-2">{t("noGenerationsTitle")}</h3>
-            <p className="text-muted-foreground mb-6">{t("noGenerationsDesc")}</p>
+            <p className="text-muted-foreground mb-2">{t("noGenerationsDesc")}</p>
+            <p className="text-xs text-muted-foreground/60 mb-6 px-4">{t("noGenerationsHint")}</p>
             <button
               onClick={() => navigate("/try")}
               className="px-6 py-2.5 bg-[#A0714A] text-white rounded-full hover:bg-[#8B5E3C] transition-colors"
