@@ -17,7 +17,7 @@ export const blogPosts: BlogPost[] = [
   {
     id: "1",
     slug: "your-image-deserves-to-be-seen",
-    title: "写在前面的话——你心里的那张图，值得被世界看见",
+    title: "写在前面的话——你心里的那抹风景，值得被世界看见",
     excerpt: "有些话，在心里转了很多圈，最后还是咽了回去。有些图，在脑海里已经完整得像一幅画，却始终没能变成手机相册里的任何一张。这篇文章，是写给你的。",
     content: `
       <p><em>——写给每一个「差一点就放弃表达」的人</em></p>
@@ -311,8 +311,11 @@ export const blogPosts: BlogPost[] = [
       <hr />
       
       <p style="text-align: center; margin-top: 40px; font-size: 0.9em; color: #A0714A;">
-        <a href="https://scenew.mentobe.co/blog" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: 1px solid #A0714A;">
-          访问 Scenew 博客主页
+        <a href="https://scenew.mentobe.co/try" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: 1px solid #A0714A; display: inline-flex; align-items: center; gap: 4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0;">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          立刻体验 Scenew
         </a>
       </p>
     `,
