@@ -402,7 +402,7 @@ function ProductCard({
 
 // ── Main Component ──────────────────────────────────────────
 export function TryItSection() {
-  const { t, lang, costConfig, user } = useI18n();
+  const { t, lang, costConfig, user, refreshUser } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -641,7 +641,7 @@ export function TryItSection() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleGenerateClick = () => {
+  const handleGenerateClick = async () => {
     if (!validate()) return;
     
     if (productLinks.some(l => l.status === "fetching")) {
@@ -654,6 +654,7 @@ export function TryItSection() {
       return;
     }
 
+    await refreshUser();
     setConfirmModalOpen(true);
   };
 
