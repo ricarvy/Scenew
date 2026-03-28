@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, User, Mail, Lock, Calendar, Coins, Edit2, Check, LogOut } from "lucide-react";
+import { X, User, Mail, Lock, Calendar, Coins, Edit2, Check, LogOut, Upload } from "lucide-react";
 import { useI18n } from "./I18nContext";
 import { toast } from "sonner";
 
@@ -15,6 +15,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +61,40 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     onClose();
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+      const res = await fetch(`${API_BASE}/auth/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) throw new Error(data?.detail || "Upload failed");
+      await refreshUser();
+      toast.success("Avatar updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div 
@@ -78,6 +114,16 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           <div className="space-y-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center mb-6">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAvatarUpload(file);
+                }}
+              />
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold mb-3 border-4 border-white shadow-lg">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.username} className="w-full h-full object-cover rounded-full" />
@@ -85,6 +131,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   user.username.charAt(0).toUpperCase()
                 )}
               </div>
+              <button
+                type="button"
+                disabled={uploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+                className="mb-2 px-3 py-1.5 rounded-full text-xs bg-[#FAF6F0] text-[#A0714A] border border-[#E8C3BA]/40 hover:bg-[#F2E8DA] transition-colors disabled:opacity-60 flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
+              </button>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
 

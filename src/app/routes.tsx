@@ -9,6 +9,8 @@ import { TermsPage } from "./components/TermsPage";
 import { BlogListPage } from "./components/BlogListPage";
 import { BlogDetailPage } from "./components/BlogDetailPage";
 import { PaymentHistoryPage } from "./components/PaymentHistoryPage";
+import { WardrobePage } from "./components/WardrobePage";
+import { CommunityPage } from "./components/CommunityPage";
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +23,9 @@ export const router = createBrowserRouter([
       { path: "blog", Component: BlogListPage },
       { path: "blog/:id", Component: BlogDetailPage },
       { path: "generations", Component: GenerationsPage },
+      { path: "wardrobe", Component: WardrobePage },
       { path: "payment-history", Component: PaymentHistoryPage },
+      { path: "community", Component: CommunityPage },
       { path: "privacy", Component: PrivacyPage },
       { path: "terms", Component: TermsPage },
     ],

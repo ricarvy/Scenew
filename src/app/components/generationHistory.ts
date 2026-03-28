@@ -15,6 +15,7 @@ export interface BackendGenerationRecord {
   credit_cost: number;
   duration?: number | null;
   created_at: string;
+  community_published?: boolean;
 }
 
 export interface GenerationHistory {
@@ -23,6 +24,7 @@ export interface GenerationHistory {
   userImage: string;
   productImage: string;
   productImages: string[]; // Added support for multiple product images
+  productTitles: string[];
   resultImage: string;
   resultImages: string[]; // Added support for multiple result images
   prompt: string;
@@ -31,6 +33,7 @@ export interface GenerationHistory {
   status: "success" | "processing" | "failed";
   duration?: number;
   generatedCopy?: string;
+  communityPublished?: boolean;
 }
 
 export async function getGenerations(userId: number | string): Promise<GenerationHistory[]> {
@@ -90,12 +93,25 @@ export async function getGenerations(userId: number | string): Promise<Generatio
           console.warn("Failed to parse generated_image_paths", e);
         }
 
+        let productTitles: string[] = [];
+        try {
+          if (record.product_links_json) {
+            const parsedLinks = JSON.parse(record.product_links_json);
+            if (Array.isArray(parsedLinks)) {
+              productTitles = parsedLinks.map((it: any) => it?.title || "").filter(Boolean);
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to parse product_links_json", e);
+        }
+
         return {
           id: record.id.toString(),
           timestamp: new Date(record.created_at).getTime(),
           userImage: record.user_image_path || "",
           productImage: productImages[0] || "", // Fallback to first image
           productImages: productImages,
+          productTitles: productTitles,
           resultImage: resultImages[0] || "", // Fallback to first image
           resultImages: resultImages,
           prompt: record.scene_description || "",
@@ -103,7 +119,8 @@ export async function getGenerations(userId: number | string): Promise<Generatio
           mode: record.mode === "copy" ? "copy" : "inspire", // Normalize mode
           status: record.status === 1 ? "processing" : "success",
           duration: record.duration || 0,
-          generatedCopy: record.generated_copy || ""
+          generatedCopy: record.generated_copy || "",
+          communityPublished: !!record.community_published,
         };
       });
   } catch (e) {

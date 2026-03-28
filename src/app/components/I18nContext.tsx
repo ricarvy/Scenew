@@ -17,6 +17,7 @@ const translations = {
     navLogout: "退出登录",
     navProfile: "个人主页",
     navGenerations: "我的生成",
+    navWardrobe: "我的衣橱",
     langLabel: "中文",
 
     // Blog
@@ -35,6 +36,27 @@ const translations = {
     viewDetails: "查看详情",
     generatedScene: "生成场景",
     downloadImage: "下载图片",
+
+    // Wardrobe Page
+    wardrobeTitle: "我的衣橱",
+    wardrobeSubtitle: "按品类整理你的常用穿搭，点击可展开或收起。",
+    wardrobeCategoryDress: "连衣裙",
+    wardrobeCategoryTshirt: "T恤",
+    wardrobeCategoryJeans: "牛仔裤",
+    wardrobeExpand: "展开",
+    wardrobeCollapse: "收起",
+    wardrobeEmpty: "暂无单品，稍后可在这里管理你的衣橱。",
+    wardrobeAddButton: "加入衣橱",
+    wardrobeAddConfirmTitle: "加入衣橱",
+    wardrobeAddConfirmDesc: "要将这个商品加入衣橱吗？",
+    wardrobeSelectCategory: "选择分类",
+    wardrobeConfirm: "确认加入",
+    wardrobeCancel: "取消",
+    wardrobeAddSuccess: "已加入衣橱",
+    wardrobeAddFailed: "加入失败，请重试",
+    wardrobeAddCategory: "新增分类",
+    wardrobeDeleteCategory: "删除分类",
+    wardrobeDeleteItem: "删除单品",
 
     // Profile Modal
     profileTitle: "个人主页",
@@ -383,6 +405,7 @@ const translations = {
     navLogout: "Logout",
     navProfile: "Profile",
     navGenerations: "My Generations",
+    navWardrobe: "My Wardrobe",
     langLabel: "EN",
 
     // Blog
@@ -401,6 +424,27 @@ const translations = {
     viewDetails: "View Details",
     generatedScene: "Generated Scene",
     downloadImage: "Download Image",
+
+    // Wardrobe Page
+    wardrobeTitle: "My Wardrobe",
+    wardrobeSubtitle: "Organize your outfits by category. Click to expand or collapse each section.",
+    wardrobeCategoryDress: "Dresses",
+    wardrobeCategoryTshirt: "T-Shirts",
+    wardrobeCategoryJeans: "Jeans",
+    wardrobeExpand: "Expand",
+    wardrobeCollapse: "Collapse",
+    wardrobeEmpty: "No items yet. You can manage your wardrobe here soon.",
+    wardrobeAddButton: "Add to Wardrobe",
+    wardrobeAddConfirmTitle: "Add to Wardrobe",
+    wardrobeAddConfirmDesc: "Add this product to your wardrobe?",
+    wardrobeSelectCategory: "Choose category",
+    wardrobeConfirm: "Confirm",
+    wardrobeCancel: "Cancel",
+    wardrobeAddSuccess: "Added to wardrobe",
+    wardrobeAddFailed: "Failed to add. Please try again",
+    wardrobeAddCategory: "Add Category",
+    wardrobeDeleteCategory: "Delete Category",
+    wardrobeDeleteItem: "Delete Item",
 
     // Profile Modal
     profileTitle: "Profile",
@@ -757,6 +801,7 @@ const translations = {
     navLogout: "लॉगआउट",
     navProfile: "प्रोफ़ाइल",
     navGenerations: "मेरी जनरेशन",
+    navWardrobe: "मेरी अलमारी",
     langLabel: "हिन्दी",
 
     // Blog
@@ -775,6 +820,27 @@ const translations = {
     viewDetails: "विवरण देखें",
     generatedScene: "जनरेट किया गया सीन",
     downloadImage: "इमेज डाउनलोड करें",
+
+    // Wardrobe Page
+    wardrobeTitle: "मेरी अलमारी",
+    wardrobeSubtitle: "अपने कपड़ों को श्रेणी के अनुसार व्यवस्थित करें। सेक्शन खोलने या बंद करने के लिए क्लिक करें।",
+    wardrobeCategoryDress: "ड्रेस",
+    wardrobeCategoryTshirt: "टी-शर्ट",
+    wardrobeCategoryJeans: "जीन्स",
+    wardrobeExpand: "खोलें",
+    wardrobeCollapse: "समेटें",
+    wardrobeEmpty: "अभी कोई आइटम नहीं। जल्द ही आप यहां अपनी अलमारी प्रबंधित कर पाएंगे।",
+    wardrobeAddButton: "अलमारी में जोड़ें",
+    wardrobeAddConfirmTitle: "अलमारी में जोड़ें",
+    wardrobeAddConfirmDesc: "क्या आप इस प्रोडक्ट को अपनी अलमारी में जोड़ना चाहते हैं?",
+    wardrobeSelectCategory: "श्रेणी चुनें",
+    wardrobeConfirm: "पुष्टि करें",
+    wardrobeCancel: "रद्द करें",
+    wardrobeAddSuccess: "अलमारी में जोड़ दिया गया",
+    wardrobeAddFailed: "जोड़ने में विफल, कृपया पुनः प्रयास करें",
+    wardrobeAddCategory: "श्रेणी जोड़ें",
+    wardrobeDeleteCategory: "श्रेणी हटाएं",
+    wardrobeDeleteItem: "आइटम हटाएं",
 
     // Profile Modal
     profileTitle: "प्रोफ़ाइल",
@@ -1131,6 +1197,7 @@ const translations = {
     navLogout: "Cerrar sesión",
     navProfile: "Perfil",
     navGenerations: "Mis generaciones",
+    navWardrobe: "Mi Armario",
     langLabel: "Español",
 
     // Blog
@@ -1149,6 +1216,27 @@ const translations = {
     viewDetails: "Ver detalles",
     generatedScene: "Escena generada",
     downloadImage: "Descargar imagen",
+
+    // Wardrobe Page
+    wardrobeTitle: "Mi Armario",
+    wardrobeSubtitle: "Organiza tus prendas por categoría. Haz clic para expandir o contraer cada sección.",
+    wardrobeCategoryDress: "Vestidos",
+    wardrobeCategoryTshirt: "Camisetas",
+    wardrobeCategoryJeans: "Jeans",
+    wardrobeExpand: "Expandir",
+    wardrobeCollapse: "Contraer",
+    wardrobeEmpty: "Aún no hay prendas. Pronto podrás gestionar tu armario aquí.",
+    wardrobeAddButton: "Añadir al armario",
+    wardrobeAddConfirmTitle: "Añadir al armario",
+    wardrobeAddConfirmDesc: "¿Quieres añadir este producto a tu armario?",
+    wardrobeSelectCategory: "Elegir categoría",
+    wardrobeConfirm: "Confirmar",
+    wardrobeCancel: "Cancelar",
+    wardrobeAddSuccess: "Añadido al armario",
+    wardrobeAddFailed: "No se pudo añadir. Inténtalo de nuevo",
+    wardrobeAddCategory: "Añadir categoría",
+    wardrobeDeleteCategory: "Eliminar categoría",
+    wardrobeDeleteItem: "Eliminar prenda",
 
     // Profile Modal
     profileTitle: "Perfil",
@@ -1505,6 +1593,7 @@ const translations = {
     navLogout: "تسجيل الخروج",
     navProfile: "الملف الشخصي",
     navGenerations: "إبداعاتي",
+    navWardrobe: "خزانتي",
     langLabel: "العربية",
 
     // Blog
@@ -1523,6 +1612,27 @@ const translations = {
     viewDetails: "عرض التفاصيل",
     generatedScene: "المشهد المُنشأ",
     downloadImage: "تحميل الصورة",
+
+    // Wardrobe Page
+    wardrobeTitle: "خزانتي",
+    wardrobeSubtitle: "نظّم ملابسك حسب الفئة. انقر لتوسيع أو طي كل قسم.",
+    wardrobeCategoryDress: "فساتين",
+    wardrobeCategoryTshirt: "تي شيرت",
+    wardrobeCategoryJeans: "جينز",
+    wardrobeExpand: "توسيع",
+    wardrobeCollapse: "طي",
+    wardrobeEmpty: "لا توجد قطع بعد. يمكنك قريباً إدارة خزانتك هنا.",
+    wardrobeAddButton: "أضف إلى الخزانة",
+    wardrobeAddConfirmTitle: "أضف إلى الخزانة",
+    wardrobeAddConfirmDesc: "هل تريد إضافة هذا المنتج إلى خزانتك؟",
+    wardrobeSelectCategory: "اختر الفئة",
+    wardrobeConfirm: "تأكيد",
+    wardrobeCancel: "إلغاء",
+    wardrobeAddSuccess: "تمت الإضافة إلى الخزانة",
+    wardrobeAddFailed: "فشلت الإضافة، حاول مرة أخرى",
+    wardrobeAddCategory: "إضافة فئة",
+    wardrobeDeleteCategory: "حذف الفئة",
+    wardrobeDeleteItem: "حذف القطعة",
 
     // Profile Modal
     profileTitle: "الملف الشخصي",
@@ -1879,6 +1989,7 @@ const translations = {
     navLogout: "Déconnexion",
     navProfile: "Profil",
     navGenerations: "Mes générations",
+    navWardrobe: "Ma Garde-robe",
     langLabel: "Français",
 
     // Blog
@@ -1897,6 +2008,27 @@ const translations = {
     viewDetails: "Voir les détails",
     generatedScene: "Scène générée",
     downloadImage: "Télécharger l'image",
+
+    // Wardrobe Page
+    wardrobeTitle: "Ma Garde-robe",
+    wardrobeSubtitle: "Organisez vos tenues par catégorie. Cliquez pour développer ou replier chaque section.",
+    wardrobeCategoryDress: "Robes",
+    wardrobeCategoryTshirt: "T-shirts",
+    wardrobeCategoryJeans: "Jeans",
+    wardrobeExpand: "Développer",
+    wardrobeCollapse: "Replier",
+    wardrobeEmpty: "Aucun article pour le moment. Vous pourrez bientôt gérer votre garde-robe ici.",
+    wardrobeAddButton: "Ajouter à la garde-robe",
+    wardrobeAddConfirmTitle: "Ajouter à la garde-robe",
+    wardrobeAddConfirmDesc: "Ajouter ce produit à votre garde-robe ?",
+    wardrobeSelectCategory: "Choisir une catégorie",
+    wardrobeConfirm: "Confirmer",
+    wardrobeCancel: "Annuler",
+    wardrobeAddSuccess: "Ajouté à la garde-robe",
+    wardrobeAddFailed: "Echec de l'ajout, reessayez",
+    wardrobeAddCategory: "Ajouter une categorie",
+    wardrobeDeleteCategory: "Supprimer la categorie",
+    wardrobeDeleteItem: "Supprimer l'article",
 
     // Profile Modal
     profileTitle: "Profil",
@@ -2253,6 +2385,7 @@ const translations = {
     navLogout: "ログアウト",
     navProfile: "プロフィール",
     navGenerations: "マイ生成",
+    navWardrobe: "マイクローゼット",
     langLabel: "日本語",
 
     // Blog
@@ -2271,6 +2404,27 @@ const translations = {
     viewDetails: "詳細を見る",
     generatedScene: "生成されたシーン",
     downloadImage: "画像をダウンロード",
+
+    // Wardrobe Page
+    wardrobeTitle: "マイクローゼット",
+    wardrobeSubtitle: "カテゴリ別にコーデを整理できます。クリックで各セクションを開閉できます。",
+    wardrobeCategoryDress: "ワンピース",
+    wardrobeCategoryTshirt: "Tシャツ",
+    wardrobeCategoryJeans: "ジーンズ",
+    wardrobeExpand: "展開",
+    wardrobeCollapse: "折りたたむ",
+    wardrobeEmpty: "まだアイテムがありません。今後ここでクローゼットを管理できます。",
+    wardrobeAddButton: "クローゼットに追加",
+    wardrobeAddConfirmTitle: "クローゼットに追加",
+    wardrobeAddConfirmDesc: "この商品をクローゼットに追加しますか？",
+    wardrobeSelectCategory: "カテゴリを選択",
+    wardrobeConfirm: "追加する",
+    wardrobeCancel: "キャンセル",
+    wardrobeAddSuccess: "クローゼットに追加しました",
+    wardrobeAddFailed: "追加に失敗しました。もう一度お試しください",
+    wardrobeAddCategory: "カテゴリ追加",
+    wardrobeDeleteCategory: "カテゴリ削除",
+    wardrobeDeleteItem: "アイテム削除",
 
     // Profile Modal
     profileTitle: "プロフィール",

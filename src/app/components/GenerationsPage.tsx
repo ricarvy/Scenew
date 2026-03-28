@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useI18n } from "./I18nContext";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Clock, ShoppingBag, User, Image as ImageIcon, ExternalLink, Calendar, ChevronRight, Download, X as XIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, ShoppingBag, User, Image as ImageIcon, ExternalLink, Calendar, ChevronRight, Download, X as XIcon, Loader2, Plus, Shirt } from "lucide-react";
 import { GenerationHistory, getGenerations, initializeMockData } from "./generationHistory";
 import { GlowOrb } from "./WarmGlow";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -11,6 +11,7 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import "swiper/css/effect-cards";
 import "swiper/css/effect-coverflow";
+import { toast } from "sonner";
 
 export function GenerationsPage() {
   const { t, lang, user } = useI18n();
@@ -18,6 +19,15 @@ export function GenerationsPage() {
   const [generations, setGenerations] = useState<GenerationHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGen, setSelectedGen] = useState<GenerationHistory | null>(null);
+  const [wardrobeModalOpen, setWardrobeModalOpen] = useState(false);
+  const [wardrobeCategory, setWardrobeCategory] = useState<string>("dress");
+  const [wardrobeCategories, setWardrobeCategories] = useState<string[]>(["dress", "tshirt", "jeans"]);
+  const [wardrobeTarget, setWardrobeTarget] = useState<{ imageUrl: string; title?: string } | null>(null);
+  const [addingWardrobe, setAddingWardrobe] = useState(false);
+  const [wardrobeBulkModalOpen, setWardrobeBulkModalOpen] = useState(false);
+  const [wardrobeBulkTargets, setWardrobeBulkTargets] = useState<Array<{ imageUrl: string; title?: string; category: string }>>([]);
+  const [addingWardrobeBulk, setAddingWardrobeBulk] = useState(false);
+  const [publishingCommunity, setPublishingCommunity] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -71,6 +81,210 @@ export function GenerationsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const categoryLabel = (name: string) => {
+    if (name === "dress") return t("wardrobeCategoryDress");
+    if (name === "tshirt") return t("wardrobeCategoryTshirt");
+    if (name === "jeans") return t("wardrobeCategoryJeans");
+    return name;
+  };
+
+  const openAddToWardrobe = async (imageUrl: string, title?: string) => {
+    const tk = localStorage.getItem("token");
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+    if (tk) {
+      try {
+        const res = await fetch(`${API_BASE}/wardrobe/categories`, {
+          headers: { Authorization: `Bearer ${tk}` },
+        });
+        if (res.ok) {
+          const data: { id: number; name: string }[] = await res.json();
+          if (data.length > 0) {
+            const names = data.map((d) => d.name);
+            setWardrobeCategories(names);
+            setWardrobeCategory(names[0] as any);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load wardrobe categories", err);
+      }
+    }
+    setWardrobeTarget({ imageUrl, title });
+    setWardrobeModalOpen(true);
+  };
+
+  const openAddAllToWardrobe = async () => {
+    if (!selectedGen) return;
+    const tk = localStorage.getItem("token");
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+    let names = wardrobeCategories;
+    if (tk) {
+      try {
+        const res = await fetch(`${API_BASE}/wardrobe/categories`, {
+          headers: { Authorization: `Bearer ${tk}` },
+        });
+        if (res.ok) {
+          const data: { id: number; name: string }[] = await res.json();
+          if (data.length > 0) {
+            names = data.map((d) => d.name);
+            setWardrobeCategories(names);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load wardrobe categories", err);
+      }
+    }
+    const defaultCategory = names[0] || "dress";
+    const images = (selectedGen.productImages && selectedGen.productImages.length > 0
+      ? selectedGen.productImages
+      : [selectedGen.productImage]
+    ).filter(Boolean);
+    const titles = selectedGen.productTitles || [];
+    setWardrobeBulkTargets(
+      images.map((img, idx) => ({
+        imageUrl: img,
+        title: titles[idx] || "",
+        category: defaultCategory,
+      })),
+    );
+    setWardrobeBulkModalOpen(true);
+  };
+
+  const confirmAddToWardrobe = async () => {
+    if (!selectedGen || !wardrobeTarget) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    setAddingWardrobe(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+      const res = await fetch(`${API_BASE}/wardrobe/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          category: wardrobeCategory,
+          product_image_url: wardrobeTarget.imageUrl,
+          product_title: wardrobeTarget.title || "",
+          source_generation_id: Number(selectedGen.id),
+        }),
+      });
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+      if (!res.ok) {
+        throw new Error("add wardrobe failed");
+      }
+      toast.success(t("wardrobeAddSuccess"));
+      setWardrobeModalOpen(false);
+      setWardrobeTarget(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(t("wardrobeAddFailed"));
+    } finally {
+      setAddingWardrobe(false);
+    }
+  };
+
+  const confirmAddAllToWardrobe = async () => {
+    if (!selectedGen || wardrobeBulkTargets.length === 0) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    setAddingWardrobeBulk(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+      await Promise.all(
+        wardrobeBulkTargets.map((it) =>
+          fetch(`${API_BASE}/wardrobe/items`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              category: it.category,
+              product_image_url: it.imageUrl,
+              product_title: it.title || "",
+              source_generation_id: Number(selectedGen.id),
+            }),
+          }).then((res) => {
+            if (!res.ok) throw new Error("add wardrobe failed");
+          }),
+        ),
+      );
+      toast.success(t("wardrobeAddSuccess"));
+      setWardrobeBulkModalOpen(false);
+      setWardrobeBulkTargets([]);
+    } catch (err) {
+      console.error(err);
+      toast.error(t("wardrobeAddFailed"));
+    } finally {
+      setAddingWardrobeBulk(false);
+    }
+  };
+
+  const publishToCommunity = async () => {
+    if (!selectedGen) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    setPublishingCommunity(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+      const isPublished = !!selectedGen.communityPublished;
+      const res = await fetch(
+        isPublished
+          ? `${API_BASE}/community/publish/${Number(selectedGen.id)}`
+          : `${API_BASE}/community/publish`,
+        {
+          method: isPublished ? "DELETE" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: isPublished ? undefined : JSON.stringify({ generation_id: Number(selectedGen.id) }),
+        },
+      );
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+      const data = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        throw new Error(data?.detail || "publish failed");
+      }
+      const nextPublished = !isPublished;
+      setGenerations((prev) => prev.map((g) => (
+        g.id === selectedGen.id ? { ...g, communityPublished: nextPublished } : g
+      )));
+      setSelectedGen((prev) => (prev ? { ...prev, communityPublished: nextPublished } : prev));
+
+      if (nextPublished) {
+        if (data?.created) {
+          toast.success(lang === "zh" ? "已发布到社区" : "Published to community");
+        } else {
+          toast.info(lang === "zh" ? "该记录已发布过" : "Already published");
+        }
+      } else {
+        toast.success(lang === "zh" ? "已设为仅自己可见" : "Set to private");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(lang === "zh" ? "发布失败，请稍后重试" : "Publish failed, please retry");
+    } finally {
+      setPublishingCommunity(false);
+    }
   };
 
   return (
@@ -149,6 +363,13 @@ export function GenerationsPage() {
                     >
                       <Download className="w-4 h-4" />
                     </button>
+                  )}
+
+                  {/* Published Badge */}
+                  {gen.status === "success" && gen.communityPublished && (
+                    <div className="absolute top-3 right-14 bg-[#A0714A]/90 text-white px-2.5 py-1 rounded-full text-[11px] font-medium shadow-sm backdrop-blur-sm z-10 pointer-events-none">
+                      {lang === "zh" ? "已发布到社区" : "Published"}
+                    </div>
                   )}
                   
                   {/* Overlay with small thumbnails */}
@@ -331,14 +552,26 @@ export function GenerationsPage() {
                            pagination={{ clickable: true, dynamicBullets: true }}
                            className="w-full h-full pb-8"
                         >
-                          {/* Simulating multiple product images */}
                           {(selectedGen.productImages && selectedGen.productImages.length > 0 ? selectedGen.productImages : [selectedGen.productImage]).map((img, idx) => (
                             <SwiperSlide key={idx}>
-                              <img 
-                                src={img} 
-                                className="w-full h-full object-cover cursor-zoom-in" 
-                                alt={`Product ${idx}`} 
-                              />
+                              <div className="w-full h-full relative group/product">
+                                <img
+                                  src={img}
+                                  className="w-full h-full object-cover cursor-zoom-in"
+                                  alt={`Product ${idx}`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openAddToWardrobe(img, selectedGen.productTitles?.[idx]);
+                                  }}
+                                  className="absolute top-2 right-2 z-20 px-2.5 py-1.5 rounded-full bg-black/55 hover:bg-black/70 text-white text-xs backdrop-blur-sm opacity-100 md:opacity-0 md:group-hover/product:opacity-100 transition-opacity flex items-center gap-1.5"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  {t("wardrobeAddButton")}
+                                </button>
+                              </div>
                             </SwiperSlide>
                           ))}
                         </Swiper>
@@ -353,6 +586,25 @@ export function GenerationsPage() {
                     <Download className="w-4 h-4" />
                     {t("downloadImage")}
                   </button>
+                  <button
+                    onClick={openAddAllToWardrobe}
+                    className="w-full py-3 rounded-xl bg-[#A0714A] text-white font-medium hover:bg-[#8B5E3C] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Shirt className="w-4 h-4" />
+                    {lang === "zh" ? "一键加入衣橱" : "Add All to Wardrobe"}
+                  </button>
+                  <button
+                    onClick={publishToCommunity}
+                    disabled={publishingCommunity}
+                    className="w-full py-3 rounded-xl bg-[#A0714A] text-white font-medium hover:bg-[#8B5E3C] transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    {publishingCommunity
+                      ? (lang === "zh" ? "处理中..." : "Processing...")
+                      : (selectedGen?.communityPublished
+                        ? (lang === "zh" ? "仅自己可见" : "Set Private")
+                        : (lang === "zh" ? "发布到社区" : "Publish to Community"))}
+                  </button>
                   <button 
                     onClick={() => {
                         // TODO: Implement "Use as template" or similar
@@ -365,6 +617,134 @@ export function GenerationsPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {wardrobeModalOpen && wardrobeTarget && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !addingWardrobe && setWardrobeModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-[#FDF9F4] border border-[#E8C3BA]/40 shadow-2xl p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Shirt className="w-4 h-4 text-[#A0714A]" />
+              <h3 className="text-lg font-medium text-[#5C3D24]">{t("wardrobeAddConfirmTitle")}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{t("wardrobeAddConfirmDesc")}</p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-[#E8C3BA]/30 mb-4">
+              <img src={wardrobeTarget.imageUrl} className="w-16 h-16 rounded-lg object-cover" alt="product" />
+              <p className="text-sm text-[#5C3D24] line-clamp-2">{wardrobeTarget.title || "-"}</p>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-2">{t("wardrobeSelectCategory")}</p>
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {wardrobeCategories.map((name) => {
+                return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setWardrobeCategory(name)}
+                  className={`px-2 py-2 rounded-lg text-sm border transition-colors ${
+                    wardrobeCategory === name
+                      ? "bg-[#A0714A] text-white border-[#A0714A]"
+                      : "bg-white text-[#5C3D24] border-[#E8C3BA]/40 hover:bg-[#FAF6F0]"
+                  }`}
+                >
+                  {categoryLabel(name)}
+                </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWardrobeModalOpen(false)}
+                disabled={addingWardrobe}
+                className="px-4 py-2 rounded-lg border border-[#E8C3BA]/40 text-sm text-[#5C3D24] hover:bg-white"
+              >
+                {t("wardrobeCancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmAddToWardrobe}
+                disabled={addingWardrobe}
+                className="px-4 py-2 rounded-lg bg-[#A0714A] text-white text-sm hover:bg-[#8B5E3C] disabled:opacity-60"
+              >
+                {addingWardrobe ? (lang === "zh" ? "处理中..." : "Saving...") : t("wardrobeConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {wardrobeBulkModalOpen && (
+        <div className="fixed inset-0 z-[121] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !addingWardrobeBulk && setWardrobeBulkModalOpen(false)}
+          />
+          <div className="relative w-full max-w-2xl rounded-2xl bg-[#FDF9F4] border border-[#E8C3BA]/40 shadow-2xl p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center gap-2 mb-2">
+              <Shirt className="w-4 h-4 text-[#A0714A]" />
+              <h3 className="text-lg font-medium text-[#5C3D24]">
+                {lang === "zh" ? "一键加入衣橱" : "Add All to Wardrobe"}
+              </h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{t("wardrobeAddConfirmDesc")}</p>
+
+            <div className="space-y-3 mb-5">
+              {wardrobeBulkTargets.map((it, idx) => (
+                <div
+                  key={`${it.imageUrl}-${idx}`}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/70 border border-[#E8C3BA]/30"
+                >
+                  <img src={it.imageUrl} className="w-14 h-14 rounded-lg object-cover" alt="product" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#5C3D24] line-clamp-1">{it.title || "-"}</p>
+                    <div className="mt-1">
+                      <select
+                        value={it.category}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setWardrobeBulkTargets((prev) =>
+                            prev.map((row, i) => (i === idx ? { ...row, category: v } : row)),
+                          );
+                        }}
+                        className="w-full rounded-md border border-[#E8C3BA]/40 bg-white px-2 py-1 text-sm"
+                      >
+                        {wardrobeCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {categoryLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWardrobeBulkModalOpen(false)}
+                disabled={addingWardrobeBulk}
+                className="px-4 py-2 rounded-lg border border-[#E8C3BA]/40 text-sm text-[#5C3D24] hover:bg-white"
+              >
+                {t("wardrobeCancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmAddAllToWardrobe}
+                disabled={addingWardrobeBulk}
+                className="px-4 py-2 rounded-lg bg-[#A0714A] text-white text-sm hover:bg-[#8B5E3C] disabled:opacity-60"
+              >
+                {addingWardrobeBulk ? (lang === "zh" ? "处理中..." : "Saving...") : t("wardrobeConfirm")}
+              </button>
             </div>
           </div>
         </div>

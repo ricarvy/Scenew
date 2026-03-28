@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon, Receipt } from "lucide-react";
+import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon, Receipt, Shirt } from "lucide-react";
 import { useI18n, Lang } from "./I18nContext";
 import { LoginModal } from "./LoginModal";
 import { RegisterModal } from "./RegisterModal";
@@ -70,9 +70,10 @@ export function Navbar() {
     { label: t("navHow"), href: "#how-it-works" },
     { label: t("navShowcase"), href: "#showcase" },
     { label: t("navFeatures"), href: "#features" },
+    { label: "社区", href: "/community" },
     { label: t("navBlog"), href: "/blog" },
     { label: t("navPricing"), href: "/pricing" },
-  { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
+    { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
     { label: t("navTry"), href: "/try" },
   ];
 
@@ -250,6 +251,16 @@ export function Navbar() {
                     </div>
                     <button
                       onClick={() => {
+                        navigate("/wardrobe");
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <Shirt className="w-4 h-4 text-muted-foreground" />
+                      {t("navWardrobe")}
+                    </button>
+                    <button
+                      onClick={() => {
                         navigate("/generations");
                         setUserMenuOpen(false);
                       }}
@@ -341,6 +352,16 @@ export function Navbar() {
                 
                 {/* Mobile User Actions */}
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/wardrobe");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                  >
+                    <Shirt className="w-4 h-4 text-muted-foreground" />
+                    {t("navWardrobe")}
+                  </button>
                   <button
                     onClick={() => {
                       setMenuOpen(false);
