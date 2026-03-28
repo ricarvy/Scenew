@@ -79,6 +79,11 @@ export function Navbar() {
   const langOptions: { code: Lang; label: string; flag: string }[] = [
     { code: "zh", label: "中文", flag: "🇨🇳" },
     { code: "en", label: "English", flag: "🇺🇸" },
+    { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
+    { code: "es", label: "Español", flag: "🇪🇸" },
+    { code: "ar", label: "العربية", flag: "🇸🇦" },
+    { code: "fr", label: "Français", flag: "🇫🇷" },
+    { code: "ja", label: "日本語", flag: "🇯🇵" },
   ];
 
   const switchLang = (code: Lang) => {
@@ -188,7 +193,7 @@ export function Navbar() {
 
               {langOpen && (
                 <div
-                  className="absolute top-full right-0 mt-2 bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-lg shadow-black/8 overflow-hidden min-w-[140px]"
+                  className="absolute top-full right-0 mt-2 bg-background/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-lg shadow-black/8 overflow-hidden min-w-[160px] max-h-[320px] overflow-y-auto"
                   style={{ animation: "navDropIn 0.2s ease" }}
                 >
                   {langOptions.map((opt) => (
