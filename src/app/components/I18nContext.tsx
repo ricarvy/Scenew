@@ -829,9 +829,25 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Only fetch user info once when app loads if token exists
-    const token = localStorage.getItem("token");
-    if (token && !user) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_auth") === "1") {
+      const token = params.get("access_token");
+      if (token) {
+        localStorage.setItem("token", token);
+        login({
+          id: params.get("user_id") || undefined,
+          username: params.get("full_name") || params.get("email")?.split("@")[0] || "",
+          email: params.get("email") || "",
+          avatar: params.get("avatar_url") || undefined,
+          credits: Number(params.get("points")) || 0,
+        });
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    const savedToken = localStorage.getItem("token");
+    if (savedToken && !user) {
       refreshUser();
     }
   }, []);
