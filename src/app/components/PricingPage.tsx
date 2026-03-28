@@ -32,16 +32,22 @@ export function PricingPage() {
       const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
       fetch(`${API_BASE}/payment/verify`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       })
-        .catch(() => {})
-        .finally(() => {
-          refreshUser().then(() => {
-            const stored = localStorage.getItem("scenew_user");
-            const pointsAfter = stored ? (JSON.parse(stored).credits || 0) : pointsBefore;
-            setPaymentResult({ type: "success", pointsBefore, pointsAfter });
-            setSearchParams({}, { replace: true });
-          });
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const pointsAfter = data?.points ?? pointsBefore;
+          refreshUser();
+          setPaymentResult({ type: "success", pointsBefore, pointsAfter });
+          setSearchParams({}, { replace: true });
+        })
+        .catch(() => {
+          refreshUser();
+          setPaymentResult({ type: "success", pointsBefore, pointsAfter: pointsBefore });
+          setSearchParams({}, { replace: true });
         });
     } else if (payment === "cancelled") {
       setPaymentResult({ type: "cancelled", pointsBefore, pointsAfter: pointsBefore });
