@@ -1,15 +1,30 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useI18n } from "./I18nContext";
-import { Check, ArrowLeft, Zap, Crown, Star, X } from "lucide-react";
+import { Check, ArrowLeft, Zap, Crown, Star } from "lucide-react";
+import { toast } from "sonner";
 
 export function PricingPage() {
-  const { t } = useI18n();
+  const { t, lang, user, refreshUser, setLoginOpen } = useI18n();
   const navigate = useNavigate();
-  const [showBetaModal, setShowBetaModal] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    const payment = searchParams.get("payment");
+    if (payment === "success") {
+      toast.success(t("pricingPaymentSuccess"));
+      refreshUser();
+      setSearchParams({}, { replace: true });
+    } else if (payment === "cancelled") {
+      toast.info(t("pricingPaymentCancelled"));
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   const plans = [
     {
+      id: "starter",
       title: t("pricingPlan1Title"),
       price: t("pricingPlan1Price"),
       points: t("pricingPlan1Points"),
@@ -18,6 +33,7 @@ export function PricingPage() {
       popular: false,
     },
     {
+      id: "growth",
       title: t("pricingPlan2Title"),
       price: t("pricingPlan2Price"),
       points: t("pricingPlan2Points"),
@@ -27,6 +43,7 @@ export function PricingPage() {
       popular: true,
     },
     {
+      id: "pro",
       title: t("pricingPlan3Title"),
       price: t("pricingPlan3Price"),
       points: t("pricingPlan3Points"),
@@ -42,6 +59,45 @@ export function PricingPage() {
     t("pricingFeature2"),
     t("pricingFeature3"),
   ];
+
+  const handleBuy = async (planId: string) => {
+    if (!user) {
+      toast.info(t("pricingLoginRequired"));
+      setLoginOpen(true);
+      return;
+    }
+
+    setLoadingPlan(planId);
+    try {
+      const token = localStorage.getItem("token");
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+      const res = await fetch(`${API_BASE}/payment/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plan_id: planId, lang }),
+      });
+
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to create checkout session");
+      }
+
+      window.location.href = data.checkout_url;
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      toast.error(err.message || "Payment service error");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <section className="relative min-h-screen pt-32 pb-24 px-6 overflow-hidden">
@@ -89,14 +145,14 @@ export function PricingPage() {
 
       {/* Cards */}
       <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6 md:gap-8">
-        {plans.map((plan, index) => (
+        {plans.map((plan) => (
           <div
-            key={index}
+            key={plan.id}
             className={`relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
               plan.popular ? "md:-mt-4 md:mb-4" : ""
             }`}
             style={{
-              background: plan.popular 
+              background: plan.popular
                 ? "linear-gradient(170deg, rgba(255,252,248,0.95) 0%, rgba(250,244,235,0.95) 100%)"
                 : "rgba(255,252,248,0.7)",
               border: plan.popular
@@ -133,9 +189,9 @@ export function PricingPage() {
                   boxShadow: plan.popular ? "0 2px 8px rgba(139,94,60,0.2)" : "none",
                 }}
               >
-                <plan.icon 
-                  className="w-4 h-4" 
-                  style={{ color: plan.popular ? "#fff" : "#A0714A" }} 
+                <plan.icon
+                  className="w-4 h-4"
+                  style={{ color: plan.popular ? "#fff" : "#A0714A" }}
                 />
               </div>
               <h3 style={{ color: "#5C3D24" }}>{plan.title}</h3>
@@ -148,28 +204,24 @@ export function PricingPage() {
             <div className="flex items-center justify-center gap-3 mb-2">
               <span
                 className="tracking-tight font-semibold"
-                style={{
-                  fontSize: "2.4rem",
-                  color: "#5C3D24",
-                }}
+                style={{ fontSize: "2.4rem", color: "#5C3D24" }}
               >
                 {t("pricingCurrency")} {plan.price}
               </span>
-              {/* Discount Badge */}
               {plan.discount && (
-                <span 
+                <span
                   className="px-2 py-1 rounded-md text-xs font-medium"
                   style={{
                     backgroundColor: "rgba(212, 175, 55, 0.15)",
                     color: "#A0714A",
-                    border: "1px solid rgba(160, 113, 74, 0.2)"
+                    border: "1px solid rgba(160, 113, 74, 0.2)",
                   }}
                 >
                   {plan.discount}
                 </span>
               )}
             </div>
-            
+
             {/* Points Highlight */}
             <div className="mb-8 font-medium text-center" style={{ color: "#A0714A", fontSize: "1.1rem" }}>
               {plan.points}
@@ -177,8 +229,9 @@ export function PricingPage() {
 
             {/* CTA */}
             <button
-              onClick={() => setShowBetaModal(true)}
-              className={`w-full py-3 rounded-xl transition-all duration-300 hover:shadow-lg mb-8 mt-auto ${
+              onClick={() => handleBuy(plan.id)}
+              disabled={loadingPlan !== null}
+              className={`w-full py-3 rounded-xl transition-all duration-300 hover:shadow-lg mb-8 mt-auto disabled:opacity-60 ${
                 plan.popular ? "hover:opacity-95" : "hover:shadow-md"
               }`}
               style={{
@@ -187,15 +240,18 @@ export function PricingPage() {
                 background: plan.popular
                   ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
                   : "rgba(196,149,106,0.08)",
-                border: plan.popular
-                  ? "none"
-                  : "1px solid rgba(196,149,106,0.18)",
-                boxShadow: plan.popular
-                  ? "0 4px 20px rgba(139,94,60,0.25)"
-                  : "none",
+                border: plan.popular ? "none" : "1px solid rgba(196,149,106,0.18)",
+                boxShadow: plan.popular ? "0 4px 20px rgba(139,94,60,0.25)" : "none",
               }}
             >
-              {t("pricingBuy")}
+              {loadingPlan === plan.id ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+                  {t("pricingProcessing")}
+                </span>
+              ) : (
+                t("pricingBuy")
+              )}
             </button>
 
             {/* Features */}
@@ -221,38 +277,6 @@ export function PricingPage() {
           </div>
         ))}
       </div>
-
-      {/* Beta Notice Modal */}
-      {showBetaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowBetaModal(false)}
-          />
-          <div className="relative w-full max-w-sm bg-[#FDF9F4] rounded-2xl shadow-2xl p-6 transform transition-all scale-100 opacity-100">
-            <button 
-              onClick={() => setShowBetaModal(false)}
-              className="absolute top-4 right-4 p-1 rounded-full hover:bg-black/5 transition-colors"
-            >
-              <X className="w-5 h-5 text-[#5C3D24]" />
-            </button>
-            
-            <h3 className="text-xl font-serif text-[#5C3D24] mb-4 text-center">
-              {t("pricingBetaModalTitle")}
-            </h3>
-            <p className="text-sm text-muted-foreground text-center mb-6 leading-relaxed">
-              {t("pricingBetaModalDesc")}
-            </p>
-            
-            <button
-              onClick={() => setShowBetaModal(false)}
-              className="w-full py-2.5 bg-[#5C3D24] text-white rounded-xl hover:bg-[#4A311D] transition-colors font-medium text-sm"
-            >
-              {t("pricingBetaModalClose")}
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

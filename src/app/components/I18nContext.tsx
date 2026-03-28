@@ -324,6 +324,10 @@ const translations = {
     pricingBetaModalTitle: "内测阶段说明",
     pricingBetaModalDesc: "当前产品处于内测阶段，暂不支持直接充值。如有需要，请联系 scenewai@163.com 获取邀请码以兑换资源包。",
     pricingBetaModalClose: "知道了",
+    pricingPaymentSuccess: "支付成功！点数已到账",
+    pricingPaymentCancelled: "支付已取消",
+    pricingLoginRequired: "请先登录后再充值",
+    pricingProcessing: "正在跳转支付页面…",
 
     // Welcome Letter
     welcomeLetterTitle: "来自 Scenew 的一封信",
@@ -531,6 +535,10 @@ const translations = {
     pricingBetaModalTitle: "Beta Phase Notice",
     pricingBetaModalDesc: "The product is currently in beta and does not support direct top-up. Please contact scenewai@163.com to get an invitation code for credit redemption.",
     pricingBetaModalClose: "Got it",
+    pricingPaymentSuccess: "Payment successful! Credits added",
+    pricingPaymentCancelled: "Payment cancelled",
+    pricingLoginRequired: "Please login before purchasing",
+    pricingProcessing: "Redirecting to payment…",
 
     // Login Modal
     loginTitle: "Welcome to Scenew",
