@@ -1,23 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useI18n } from "./I18nContext";
-import { Check, ArrowLeft, Zap, Crown, Star } from "lucide-react";
+import { Check, ArrowLeft, Zap, Crown, Star, X, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
+
+interface PaymentResult {
+  type: "success" | "cancelled";
+  pointsBefore: number;
+  pointsAfter: number;
+}
 
 export function PricingPage() {
   const { t, lang, user, refreshUser, setLoginOpen } = useI18n();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+  const handledRef = useRef(false);
 
   useEffect(() => {
+    if (handledRef.current) return;
     const payment = searchParams.get("payment");
+    if (!payment) return;
+    handledRef.current = true;
+
+    const pointsBefore = Number(localStorage.getItem("scenew_points_before") || "0");
+    localStorage.removeItem("scenew_points_before");
+
     if (payment === "success") {
-      toast.success(t("pricingPaymentSuccess"));
-      refreshUser();
-      setSearchParams({}, { replace: true });
+      refreshUser().then(() => {
+        const stored = localStorage.getItem("scenew_user");
+        const pointsAfter = stored ? (JSON.parse(stored).credits || 0) : pointsBefore;
+        setPaymentResult({ type: "success", pointsBefore, pointsAfter });
+        setSearchParams({}, { replace: true });
+      });
     } else if (payment === "cancelled") {
-      toast.info(t("pricingPaymentCancelled"));
+      setPaymentResult({ type: "cancelled", pointsBefore, pointsAfter: pointsBefore });
       setSearchParams({}, { replace: true });
     }
   }, []);
@@ -67,6 +85,7 @@ export function PricingPage() {
       return;
     }
 
+    localStorage.setItem("scenew_points_before", String(user.credits || 0));
     setLoadingPlan(planId);
     try {
       const token = localStorage.getItem("token");
@@ -101,6 +120,124 @@ export function PricingPage() {
 
   return (
     <section className="relative min-h-screen pt-32 pb-24 px-6 overflow-hidden">
+      {/* Payment Result Modal */}
+      {paymentResult && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+          onClick={() => setPaymentResult(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl p-8 text-center"
+            style={{
+              background: "linear-gradient(170deg, #FFFCF8 0%, #FAF4EB 100%)",
+              border: "1px solid rgba(196,149,106,0.15)",
+              boxShadow: "0 20px 60px rgba(92,61,36,0.15)",
+              animation: "modalIn 0.3s ease",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setPaymentResult(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {paymentResult.type === "success" ? (
+              <>
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(22,163,74,0.08) 100%)",
+                  }}
+                >
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: "#5C3D24" }}>
+                  {t("paymentSuccessTitle")}
+                </h3>
+                <p className="text-muted-foreground text-sm mb-6">
+                  {t("paymentSuccessDesc")}
+                </p>
+
+                <div
+                  className="rounded-xl p-5 mb-6"
+                  style={{
+                    background: "rgba(196,149,106,0.06)",
+                    border: "1px solid rgba(196,149,106,0.1)",
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">{t("paymentBalanceBefore")}</span>
+                    <span className="text-sm font-medium" style={{ color: "#8B5E3C" }}>
+                      {paymentResult.pointsBefore} {t("profilePointsUnit")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">{t("paymentPointsAdded")}</span>
+                    <span className="text-sm font-medium text-green-600">
+                      +{paymentResult.pointsAfter - paymentResult.pointsBefore} {t("profilePointsUnit")}
+                    </span>
+                  </div>
+                  <div
+                    className="h-px my-2"
+                    style={{ background: "rgba(196,149,106,0.12)" }}
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium" style={{ color: "#5C3D24" }}>
+                      {t("paymentBalanceAfter")}
+                    </span>
+                    <span className="text-lg font-bold" style={{ color: "#A0714A" }}>
+                      {paymentResult.pointsAfter} {t("profilePointsUnit")}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setPaymentResult(null)}
+                  className="w-full py-3 rounded-xl text-white text-sm transition-all hover:opacity-90"
+                  style={{
+                    background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                    boxShadow: "0 4px 16px rgba(139,94,60,0.25)",
+                  }}
+                >
+                  {t("paymentSuccessOk")}
+                </button>
+              </>
+            ) : (
+              <>
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+                  style={{
+                    background: "rgba(239,68,68,0.08)",
+                  }}
+                >
+                  <XCircle className="w-8 h-8 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: "#5C3D24" }}>
+                  {t("paymentCancelledTitle")}
+                </h3>
+                <p className="text-muted-foreground text-sm mb-6">
+                  {t("paymentCancelledDesc")}
+                </p>
+                <button
+                  onClick={() => setPaymentResult(null)}
+                  className="w-full py-3 rounded-xl text-sm transition-all hover:bg-muted/60"
+                  style={{
+                    color: "#8B5E3C",
+                    background: "rgba(196,149,106,0.08)",
+                    border: "1px solid rgba(196,149,106,0.18)",
+                  }}
+                >
+                  {t("paymentCancelledOk")}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Back button */}
       <div className="max-w-5xl mx-auto mb-10">
         <button
@@ -163,7 +300,6 @@ export function PricingPage() {
                 : "0 4px 24px rgba(139,94,60,0.04)",
             }}
           >
-            {/* Popular badge */}
             {plan.popular && (
               <div
                 className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full"
@@ -200,7 +336,6 @@ export function PricingPage() {
               {plan.desc}
             </p>
 
-            {/* Price */}
             <div className="flex items-center justify-center gap-3 mb-2">
               <span
                 className="tracking-tight font-semibold"
@@ -222,12 +357,10 @@ export function PricingPage() {
               )}
             </div>
 
-            {/* Points Highlight */}
             <div className="mb-8 font-medium text-center" style={{ color: "#A0714A", fontSize: "1.1rem" }}>
               {plan.points}
             </div>
 
-            {/* CTA */}
             <button
               onClick={() => handleBuy(plan.id)}
               disabled={loadingPlan !== null}
@@ -254,7 +387,6 @@ export function PricingPage() {
               )}
             </button>
 
-            {/* Features */}
             <ul className="space-y-3.5">
               {commonFeatures.map((f, i) => (
                 <li key={i} className="flex items-start gap-3">
@@ -277,6 +409,13 @@ export function PricingPage() {
           </div>
         ))}
       </div>
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.95) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </section>
   );
 }

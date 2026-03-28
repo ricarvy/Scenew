@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon } from "lucide-react";
+import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon, Receipt } from "lucide-react";
 import { useI18n, Lang } from "./I18nContext";
 import { LoginModal } from "./LoginModal";
 import { RegisterModal } from "./RegisterModal";
@@ -255,6 +255,16 @@ export function Navbar() {
                     </button>
                     <button
                       onClick={() => {
+                        navigate("/payment-history");
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <Receipt className="w-4 h-4 text-muted-foreground" />
+                      {t("navPaymentHistory")}
+                    </button>
+                    <button
+                      onClick={() => {
                         setProfileOpen(true);
                         setUserMenuOpen(false);
                       }}
@@ -325,7 +335,7 @@ export function Navbar() {
                 </div>
                 
                 {/* Mobile User Actions */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       setMenuOpen(false);
@@ -335,6 +345,16 @@ export function Navbar() {
                   >
                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
                     {t("navGenerations")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/payment-history");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                  >
+                    <Receipt className="w-4 h-4 text-muted-foreground" />
+                    {t("navPaymentHistory")}
                   </button>
                   <button
                     onClick={() => {

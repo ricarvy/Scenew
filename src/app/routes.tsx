@@ -8,6 +8,7 @@ import { PrivacyPage } from "./components/PrivacyPage";
 import { TermsPage } from "./components/TermsPage";
 import { BlogListPage } from "./components/BlogListPage";
 import { BlogDetailPage } from "./components/BlogDetailPage";
+import { PaymentHistoryPage } from "./components/PaymentHistoryPage";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "blog", Component: BlogListPage },
       { path: "blog/:id", Component: BlogDetailPage },
       { path: "generations", Component: GenerationsPage },
+      { path: "payment-history", Component: PaymentHistoryPage },
       { path: "privacy", Component: PrivacyPage },
       { path: "terms", Component: TermsPage },
     ],
