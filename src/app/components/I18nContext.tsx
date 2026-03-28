@@ -777,7 +777,14 @@ const I18nContext = createContext<I18nContextType>({
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("zh");
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved = localStorage.getItem("scenew_lang");
+    return saved === "en" ? "en" : "zh";
+  });
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    localStorage.setItem("scenew_lang", l);
+  };
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem("scenew_user");
     return saved ? JSON.parse(saved) : null;
