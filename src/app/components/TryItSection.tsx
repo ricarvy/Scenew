@@ -64,6 +64,8 @@ interface GenerateRequest {
   creativeMode?: "copy" | "inspire";
   sceneImage?: File;
   seedMode?: boolean;
+  productImage?: File;
+  productInputMode?: "link" | "image";
 }
 
 interface GenerateResult {
@@ -107,6 +109,12 @@ async function generateSceneImages(
     
     if (request.sceneImage) {
       formData.append("scene_image", request.sceneImage);
+    }
+    if (request.productImage) {
+      formData.append("product_image", request.productImage);
+    }
+    if (request.productInputMode) {
+      formData.append("product_input_mode", request.productInputMode);
     }
 
   const token = localStorage.getItem("token") || "";
@@ -426,6 +434,12 @@ export function TryItSection() {
   const [generateError, setGenerateError] = useState<string>("");
   const [seedMode, setSeedMode] = useState(false);
 
+  // Product input mode: "link" or "image"
+  const [productInputMode, setProductInputMode] = useState<"link" | "image">("link");
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const productImageInputRef = useRef<HTMLInputElement>(null);
+
   // Mode explanation modal
   const [modeModalOpen, setModeModalOpen] = useState(false);
 
@@ -632,11 +646,32 @@ export function TryItSection() {
     }
   };
 
+  const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProductImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setProductImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+    setErrors((prev) => ({ ...prev, link: undefined }));
+  };
+
+  const handleProductModeSwitch = (mode: "link" | "image") => {
+    setProductInputMode(mode);
+    if (mode === "image" && seedMode) {
+      setSeedMode(false);
+    }
+  };
+
   // ── Validation & generation ─────────────────────────────
   const validate = (): boolean => {
     const newErrors: { photo?: string; link?: string } = {};
     if (!photoFile) newErrors.photo = t("tryValidationPhoto");
-    if (productLinks.length === 0) newErrors.link = t("tryValidationLink");
+    if (productInputMode === "link" && productLinks.length === 0) {
+      newErrors.link = t("tryValidationLink");
+    } else if (productInputMode === "image" && !productImageFile) {
+      newErrors.link = t("tryValidationProduct");
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -644,14 +679,16 @@ export function TryItSection() {
   const handleGenerateClick = async () => {
     if (!validate()) return;
     
-    if (productLinks.some(l => l.status === "fetching")) {
-      toast.warning(lang === "zh" ? "请等待商品链接解析完成" : "Please wait for product links to load");
-      return;
-    }
-    
-    if (productLinks.some(l => l.status === "error" || l.status === "need_login")) {
-      toast.error(lang === "zh" ? "存在解析失败的链接，请删除或重试" : "Please remove or retry failed links");
-      return;
+    if (productInputMode === "link") {
+      if (productLinks.some(l => l.status === "fetching")) {
+        toast.warning(lang === "zh" ? "请等待商品链接解析完成" : "Please wait for product links to load");
+        return;
+      }
+      
+      if (productLinks.some(l => l.status === "error" || l.status === "need_login")) {
+        toast.error(lang === "zh" ? "存在解析失败的链接，请删除或重试" : "Please remove or retry failed links");
+        return;
+      }
     }
 
     await refreshUser();
@@ -667,16 +704,18 @@ export function TryItSection() {
     setGenerateError("");
     const request: GenerateRequest = {
       photo: photoFile!,
-      productLinks: productLinks.map((link) => ({ 
+      productLinks: productInputMode === "link" ? productLinks.map((link) => ({ 
         url: link.url, 
         product: link.product,
         selectedImageIndex: link.selectedImageIndex,
         platformName: link.platform.name,
-      })),
+      })) : [],
       sceneDescription: sceneDesc,
       creativeMode: creativeMode,
       sceneImage: sceneImageFile || undefined,
-      seedMode,
+      seedMode: productInputMode === "link" ? seedMode : false,
+      productImage: productInputMode === "image" ? productImageFile || undefined : undefined,
+      productInputMode,
     };
       generateSceneImages(request)
       .then((results) => {
@@ -685,7 +724,9 @@ export function TryItSection() {
         setGeneratedResults(results);
         
         if (results.length > 0) {
-           const productImg = productLinks[0]?.product?.image || "";
+           const productImg = productInputMode === "image" 
+             ? productImagePreview 
+             : (productLinks[0]?.product?.image || "");
            saveGeneration({
              userImage: photoPreview, 
              productImage: productImg,
@@ -923,8 +964,14 @@ export function TryItSection() {
                 <button
                   type="button"
                   aria-pressed={seedMode}
-                  onClick={() => setSeedMode((v) => !v)}
-                  className="relative w-14 h-9 rounded-full flex-shrink-0 transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0714A]/30"
+                  onClick={() => {
+                    if (productInputMode === "image") {
+                      toast.info(t("trySeedModeImageWarning"), { duration: 4000 });
+                      return;
+                    }
+                    setSeedMode((v) => !v);
+                  }}
+                  className={`relative w-14 h-9 rounded-full flex-shrink-0 transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0714A]/30 ${productInputMode === "image" ? "opacity-40 cursor-not-allowed" : ""}`}
                   style={{
                     background: seedMode
                       ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 55%, #FFCC66 110%)"
@@ -1018,115 +1065,238 @@ export function TryItSection() {
               )}
             </div>
 
-            {/* ── Product Links (multi) ── */}
+            {/* ── Product Input (Link / Image mode) ── */}
             <div>
               <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
-                <span className="flex items-center gap-2 flex-wrap">
+                <span className="flex items-center gap-2">
                   <ShoppingBag className="w-3.5 h-3.5" />
                   {t("tryLinkLabel")}
                   <span className="text-red-400">*</span>
-                  <span className="text-muted-foreground/60 ml-2 font-normal normal-case tracking-normal" style={{ fontSize: "0.7rem" }}>
-                    ({t("tryLinkSupportHint")})
-                  </span>
-                  {productLinks.length > 0 && (
-                    <span
-                      className="ml-auto px-2 py-0.5 rounded-full"
-                      style={{
-                        fontSize: "0.65rem",
-                        color: "#A0714A",
-                        background: "rgba(160,113,74,0.08)",
-                      }}
-                    >
-                      {productLinks.length}/5
-                    </span>
-                  )}
                 </span>
               </label>
 
-              {/* Link input with add button */}
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    ref={linkInputRef}
-                    type="url"
-                    placeholder={t("tryLinkPlaceholder")}
-                    value={linkInput}
-                    onChange={(e) => {
-                      setLinkInput(e.target.value);
-                      if (errors.link) setErrors((prev) => ({ ...prev, link: undefined }));
-                    }}
-                    onKeyDown={handleLinkKeyDown}
-                    disabled={productLinks.length >= 5}
-                    className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 outline-none focus:ring-1 transition-all ${
-                      errors.link ? "ring-1 ring-red-300 bg-red-50/30" : "focus:ring-primary/25"
-                    } disabled:opacity-50`}
-                    style={{
-                      fontSize: "0.88rem",
-                      background: errors.link ? undefined : "rgba(237,229,216,0.3)",
-                    }}
-                  />
-                </div>
+              {/* Mode tabs */}
+              <div className="flex gap-1 p-1 rounded-xl mb-3" style={{ background: "rgba(237,229,216,0.35)" }}>
                 <button
-                  onClick={() => addLink(linkInput)}
-                  disabled={!linkInput.trim() || productLinks.length >= 5}
-                  className="px-4 py-3 rounded-xl transition-all duration-300 hover:opacity-90 disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0 text-primary-foreground"
+                  type="button"
+                  onClick={() => handleProductModeSwitch("link")}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-200"
                   style={{
-                    fontSize: "0.82rem",
-                    background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
-                    boxShadow: "0 2px 8px rgba(139,94,60,0.15)",
+                    fontSize: "0.8rem",
+                    fontWeight: productInputMode === "link" ? 600 : 400,
+                    color: productInputMode === "link" ? "#FFFCF8" : "#8B5E3C",
+                    background: productInputMode === "link"
+                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                      : "transparent",
+                    boxShadow: productInputMode === "link" ? "0 2px 8px rgba(139,94,60,0.18)" : "none",
                   }}
                 >
-                  <Plus className="w-4 h-4" />
-                  {t("tryLinkAdd")}
+                  <Link2 className="w-3.5 h-3.5" />
+                  {t("tryProductModeLink")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleProductModeSwitch("image")}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-200"
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: productInputMode === "image" ? 600 : 400,
+                    color: productInputMode === "image" ? "#FFFCF8" : "#8B5E3C",
+                    background: productInputMode === "image"
+                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                      : "transparent",
+                    boxShadow: productInputMode === "image" ? "0 2px 8px rgba(139,94,60,0.18)" : "none",
+                  }}
+                >
+                  <ImagePlus className="w-3.5 h-3.5" />
+                  {t("tryProductModeImage")}
                 </button>
               </div>
 
-              {/* Max links warning */}
-              {productLinks.length >= 5 && (
-                <p className="text-amber-600 mt-2 flex items-center gap-1" style={{ fontSize: "0.72rem" }}>
-                  <AlertCircle className="w-3 h-3" />
-                  {t("tryLinkMax")}
-                </p>
+              {/* Link mode content */}
+              {productInputMode === "link" && (
+                <>
+                  <div className="mb-1">
+                    <span className="text-muted-foreground/60 font-normal normal-case tracking-normal" style={{ fontSize: "0.7rem" }}>
+                      {t("tryLinkSupportHint")}
+                    </span>
+                    {productLinks.length > 0 && (
+                      <span
+                        className="ml-2 px-2 py-0.5 rounded-full"
+                        style={{
+                          fontSize: "0.65rem",
+                          color: "#A0714A",
+                          background: "rgba(160,113,74,0.08)",
+                        }}
+                      >
+                        {productLinks.length}/5
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        ref={linkInputRef}
+                        type="url"
+                        placeholder={t("tryLinkPlaceholder")}
+                        value={linkInput}
+                        onChange={(e) => {
+                          setLinkInput(e.target.value);
+                          if (errors.link) setErrors((prev) => ({ ...prev, link: undefined }));
+                        }}
+                        onKeyDown={handleLinkKeyDown}
+                        disabled={productLinks.length >= 5}
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 outline-none focus:ring-1 transition-all ${
+                          errors.link ? "ring-1 ring-red-300 bg-red-50/30" : "focus:ring-primary/25"
+                        } disabled:opacity-50`}
+                        style={{
+                          fontSize: "0.88rem",
+                          background: errors.link ? undefined : "rgba(237,229,216,0.3)",
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => addLink(linkInput)}
+                      disabled={!linkInput.trim() || productLinks.length >= 5}
+                      className="px-4 py-3 rounded-xl transition-all duration-300 hover:opacity-90 disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0 text-primary-foreground"
+                      style={{
+                        fontSize: "0.82rem",
+                        background: "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)",
+                        boxShadow: "0 2px 8px rgba(139,94,60,0.15)",
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t("tryLinkAdd")}
+                    </button>
+                  </div>
+
+                  {productLinks.length >= 5 && (
+                    <p className="text-amber-600 mt-2 flex items-center gap-1" style={{ fontSize: "0.72rem" }}>
+                      <AlertCircle className="w-3 h-3" />
+                      {t("tryLinkMax")}
+                    </p>
+                  )}
+
+                  {productLinks.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {productLinks.map((item) => (
+                        <ProductCard
+                          key={item.id}
+                          item={item}
+                          onRemove={() => removeLink(item.id)}
+                          onRetry={() => retryLink(item.id)}
+                          onSelectImage={(index) => {
+                            setProductLinks((prev) =>
+                              prev.map((p) =>
+                                p.id === item.id ? { ...p, selectedImageIndex: index } : p
+                              )
+                            );
+                          }}
+                          t={t}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {productLinks.length === 0 && !errors.link && (
+                    <p
+                      className="text-center text-muted-foreground/40 mt-4 flex items-center justify-center gap-2"
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      {t("tryLinkEmpty")}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Image mode content */}
+              {productInputMode === "image" && (
+                <>
+                  <input
+                    ref={productImageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    onChange={handleProductImageSelect}
+                  />
+                  <div
+                    onClick={() => productImageInputRef.current?.click()}
+                    className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer group ${
+                      errors.link
+                        ? "border-red-300 bg-red-50/20"
+                        : productImagePreview
+                        ? "border-[#A0714A]/30 bg-[#A0714A]/5"
+                        : "border-[#A0714A]/15 hover:border-[#A0714A]/35 bg-[rgba(237,229,216,0.2)] hover:bg-[rgba(237,229,216,0.35)]"
+                    }`}
+                    style={{ minHeight: productImagePreview ? "auto" : "140px" }}
+                  >
+                    {productImagePreview ? (
+                      <div className="flex items-center gap-4 p-4">
+                        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-white/50">
+                          <img
+                            src={productImagePreview}
+                            alt="Product"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "#5C3D24" }}>
+                            {t("tryProductImageUploaded")}
+                          </p>
+                          <p className="text-muted-foreground/60 mt-1" style={{ fontSize: "0.75rem" }}>
+                            {productImageFile?.name}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              productImageInputRef.current?.click();
+                            }}
+                            className="mt-2 text-[#A0714A] hover:text-[#8B5E3C] transition-colors"
+                            style={{ fontSize: "0.78rem" }}
+                          >
+                            {t("tryProductImageChange")}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProductImageFile(null);
+                            setProductImagePreview("");
+                          }}
+                          className="p-1.5 rounded-full hover:bg-red-50 text-muted-foreground/40 hover:text-red-400 transition-colors flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 px-4">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-all group-hover:scale-105"
+                          style={{ background: "rgba(160,113,74,0.08)" }}
+                        >
+                          <ImagePlus className="w-5 h-5" style={{ color: "#A0714A" }} />
+                        </div>
+                        <p className="text-sm" style={{ color: "#5C3D24" }}>
+                          {t("tryProductImageUpload")}
+                        </p>
+                        <p className="text-muted-foreground/50 mt-1" style={{ fontSize: "0.72rem" }}>
+                          {t("tryProductImageFormat")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
 
               {errors.link && (
                 <p className="flex items-center gap-1.5 mt-2 text-red-400" style={{ fontSize: "0.75rem" }}>
                   <AlertCircle className="w-3.5 h-3.5" />
                   {errors.link}
-                </p>
-              )}
-
-              {/* Product cards list */}
-              {productLinks.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {productLinks.map((item) => (
-                    <ProductCard
-                      key={item.id}
-                      item={item}
-                      onRemove={() => removeLink(item.id)}
-                      onRetry={() => retryLink(item.id)}
-                      onSelectImage={(index) => {
-                        setProductLinks((prev) =>
-                          prev.map((p) =>
-                            p.id === item.id ? { ...p, selectedImageIndex: index } : p
-                          )
-                        );
-                      }}
-                      t={t}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Empty state hint */}
-              {productLinks.length === 0 && !errors.link && (
-                <p
-                  className="text-center text-muted-foreground/40 mt-4 flex items-center justify-center gap-2"
-                  style={{ fontSize: "0.75rem" }}
-                >
-                  <Package className="w-3.5 h-3.5" />
-                  {t("tryLinkEmpty")}
                 </p>
               )}
             </div>

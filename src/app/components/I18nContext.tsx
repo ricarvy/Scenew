@@ -251,7 +251,17 @@ const translations = {
     tryLinkRetry: "重试",
     tryLinkUnsupported: "暂不支持该平台，目前仅支持淘宝/天猫链接",
     tryLinkSupportHint: "当前仅支持淘宝/天猫 pc端链接，暂不支持淘口令",
-    
+
+    // Product Input Mode
+    tryProductModeLink: "链接模式",
+    tryProductModeImage: "图片模式",
+    tryProductImageUpload: "点击上传商品图片",
+    tryProductImageFormat: "支持 JPG / PNG，最大 10MB",
+    tryProductImageUploaded: "已上传",
+    tryProductImageChange: "更换图片",
+    trySeedModeImageWarning: "种草模式仅在链接模式下可用，因为需要从商品链接中获取价格、店铺等信息来生成购物卡片。",
+    tryValidationProduct: "请上传商品图片或粘贴商品链接",
+
     // Browser Login Modal
     browserLoginTitle: "需要平台登录",
     browserLoginDesc: "该商品需要登录后才能访问，请在下方窗口完成登录",
@@ -649,6 +659,16 @@ const translations = {
     tryLinkUnsupported: "Platform not supported yet. Currently only Taobao/Tmall links are supported.",
     tryLinkSupportHint: "Currently only supports Taobao/Tmall PC links, Taobao Key not supported yet",
 
+    // Product Input Mode
+    tryProductModeLink: "Link Mode",
+    tryProductModeImage: "Image Mode",
+    tryProductImageUpload: "Click to upload product image",
+    tryProductImageFormat: "Supports JPG / PNG, max 10MB",
+    tryProductImageUploaded: "Uploaded",
+    tryProductImageChange: "Change Image",
+    trySeedModeImageWarning: "Seeding Mode is only available in Link Mode, as it needs product info (price, shop name, etc.) from the link to generate the shopping card.",
+    tryValidationProduct: "Please upload a product image or paste a product link",
+
     // Browser Login Modal
     browserLoginTitle: "Platform Login Required",
     browserLoginDesc: "This product requires login to access. Please complete login in the window below",
@@ -979,6 +999,16 @@ const translations = {
     tryLinkRetry: "पुनः प्रयास करें",
     tryLinkUnsupported: "प्लेटफ़ॉर्म अभी सपोर्ट नहीं करता। वर्तमान में केवल Taobao/Tmall लिंक सपोर्ट हैं।",
     tryLinkSupportHint: "वर्तमान में केवल Taobao/Tmall PC लिंक सपोर्ट हैं",
+
+    // Product Input Mode
+    tryProductModeLink: "लिंक मोड",
+    tryProductModeImage: "इमेज मोड",
+    tryProductImageUpload: "प्रोडक्ट इमेज अपलोड करने के लिए क्लिक करें",
+    tryProductImageFormat: "JPG / PNG सपोर्ट, अधिकतम 10MB",
+    tryProductImageUploaded: "अपलोड हो गया",
+    tryProductImageChange: "इमेज बदलें",
+    trySeedModeImageWarning: "सीडिंग मोड केवल लिंक मोड में उपलब्ध है, क्योंकि शॉपिंग कार्ड बनाने के लिए लिंक से प्रोडक्ट जानकारी (कीमत, दुकान का नाम आदि) चाहिए।",
+    tryValidationProduct: "कृपया प्रोडक्ट इमेज अपलोड करें या प्रोडक्ट लिंक पेस्ट करें",
 
     // Browser Login Modal
     browserLoginTitle: "प्लेटफ़ॉर्म लॉगिन आवश्यक",
@@ -1344,6 +1374,16 @@ const translations = {
     tryLinkUnsupported: "Plataforma no compatible aún. Actualmente solo se admiten enlaces de Taobao/Tmall.",
     tryLinkSupportHint: "Actualmente solo se admiten enlaces PC de Taobao/Tmall",
 
+    // Product Input Mode
+    tryProductModeLink: "Modo enlace",
+    tryProductModeImage: "Modo imagen",
+    tryProductImageUpload: "Haz clic para subir imagen del producto",
+    tryProductImageFormat: "Admite JPG / PNG, máx. 10MB",
+    tryProductImageUploaded: "Subida",
+    tryProductImageChange: "Cambiar imagen",
+    trySeedModeImageWarning: "El Modo Seeding solo está disponible en Modo enlace, ya que necesita información del producto (precio, tienda, etc.) del enlace para generar la tarjeta de compra.",
+    tryValidationProduct: "Sube una imagen del producto o pega un enlace",
+
     // Browser Login Modal
     browserLoginTitle: "Se requiere inicio de sesión",
     browserLoginDesc: "Este producto requiere inicio de sesión. Completa el inicio de sesión en la ventana de abajo",
@@ -1707,6 +1747,16 @@ const translations = {
     tryLinkRetry: "إعادة المحاولة",
     tryLinkUnsupported: "المنصة غير مدعومة بعد. حالياً يتم دعم روابط Taobao/Tmall فقط.",
     tryLinkSupportHint: "حالياً يدعم فقط روابط Taobao/Tmall لسطح المكتب",
+
+    // Product Input Mode
+    tryProductModeLink: "وضع الرابط",
+    tryProductModeImage: "وضع الصورة",
+    tryProductImageUpload: "انقر لرفع صورة المنتج",
+    tryProductImageFormat: "يدعم JPG / PNG، الحد الأقصى 10MB",
+    tryProductImageUploaded: "تم الرفع",
+    tryProductImageChange: "تغيير الصورة",
+    trySeedModeImageWarning: "وضع البذر متاح فقط في وضع الرابط، لأنه يحتاج معلومات المنتج (السعر، اسم المتجر، إلخ) من الرابط لإنشاء بطاقة التسوق.",
+    tryValidationProduct: "يرجى رفع صورة المنتج أو لصق رابط المنتج",
 
     // Browser Login Modal
     browserLoginTitle: "يلزم تسجيل الدخول للمنصة",
@@ -2072,6 +2122,16 @@ const translations = {
     tryLinkUnsupported: "Plateforme non prise en charge. Actuellement, seuls les liens Taobao/Tmall sont acceptés.",
     tryLinkSupportHint: "Actuellement seuls les liens PC Taobao/Tmall sont pris en charge",
 
+    // Product Input Mode
+    tryProductModeLink: "Mode lien",
+    tryProductModeImage: "Mode image",
+    tryProductImageUpload: "Cliquez pour télécharger l'image du produit",
+    tryProductImageFormat: "Formats JPG / PNG, max 10 Mo",
+    tryProductImageUploaded: "Téléchargée",
+    tryProductImageChange: "Changer l'image",
+    trySeedModeImageWarning: "Le Mode Seeding n'est disponible qu'en Mode lien, car il nécessite les informations produit (prix, nom du magasin, etc.) du lien pour générer la carte d'achat.",
+    tryValidationProduct: "Veuillez télécharger une image du produit ou coller un lien",
+
     // Browser Login Modal
     browserLoginTitle: "Connexion à la plateforme requise",
     browserLoginDesc: "Ce produit nécessite une connexion. Veuillez vous connecter dans la fenêtre ci-dessous",
@@ -2435,6 +2495,16 @@ const translations = {
     tryLinkRetry: "再試行",
     tryLinkUnsupported: "このプラットフォームはまだサポートされていません。現在Taobao/Tmallリンクのみ対応です。",
     tryLinkSupportHint: "現在Taobao/TmallのPCリンクのみ対応",
+
+    // Product Input Mode
+    tryProductModeLink: "リンクモード",
+    tryProductModeImage: "画像モード",
+    tryProductImageUpload: "クリックして商品画像をアップロード",
+    tryProductImageFormat: "JPG / PNG対応、最大10MB",
+    tryProductImageUploaded: "アップロード済み",
+    tryProductImageChange: "画像を変更",
+    trySeedModeImageWarning: "シーディングモードはリンクモードでのみ利用可能です。ショッピングカードの生成にはリンクから商品情報（価格、店舗名など）を取得する必要があります。",
+    tryValidationProduct: "商品画像をアップロードするか商品リンクを貼り付けてください",
 
     // Browser Login Modal
     browserLoginTitle: "プラットフォームログインが必要です",
