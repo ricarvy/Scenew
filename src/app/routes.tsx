@@ -14,6 +14,7 @@ import { CommunityPage } from "./components/CommunityPage";
 import { MessagesPage } from "./components/MessagesPage";
 import { UserProfilePage } from "./components/UserProfilePage";
 import { AvatarEntryAuthGuard } from "./components/AvatarEntryAuthGuard";
+import { MyModelsPage } from "./components/MyModelsPage";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
           { path: "wardrobe", Component: WardrobePage },
           { path: "payment-history", Component: PaymentHistoryPage },
           { path: "messages", Component: MessagesPage },
+          { path: "my-models", Component: MyModelsPage },
         ],
       },
       { path: "user/:userId", Component: UserProfilePage },

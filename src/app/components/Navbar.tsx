@@ -329,6 +329,16 @@ export function Navbar() {
                     </button>
                     <button
                       onClick={() => {
+                        navigate("/my-models");
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      {lang === "zh" ? "我的模特" : "My Models"}
+                    </button>
+                    <button
+                      onClick={() => {
                         navigate("/payment-history");
                         setUserMenuOpen(false);
                       }}
@@ -445,6 +455,16 @@ export function Navbar() {
                     {unreadCount > 0 && (
                       <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
                     )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/my-models");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                  >
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    {lang === "zh" ? "我的模特" : "My Models"}
                   </button>
                   <button
                     onClick={() => {

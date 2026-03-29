@@ -53,7 +53,8 @@ import { saveGeneration } from "./generationHistory";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://120.76.142.91:8910";
 
 interface GenerateRequest {
-  photo: File;
+  photo?: File;
+  modelPhotoId?: number;
   productLinks: { 
     url: string; 
     product?: ProductInfo; 
@@ -81,6 +82,13 @@ interface GenerateSceneResponse {
   productImageUrls: string[];
 }
 
+interface UserModelPhoto {
+  id: number;
+  name: string;
+  image_url: string;
+  is_default: boolean;
+}
+
 /**
  * Call the scene generation backend API.
  */
@@ -88,7 +96,12 @@ async function generateSceneImages(
   request: GenerateRequest
 ): Promise<GenerateSceneResponse> {
   const formData = new FormData();
-  formData.append("photo", request.photo);
+  if (request.photo) {
+    formData.append("photo", request.photo);
+  }
+  if (typeof request.modelPhotoId === "number") {
+    formData.append("model_photo_id", String(request.modelPhotoId));
+  }
   
   // Format links with selected image index
     const formattedLinks = request.productLinks.map(l => {
@@ -437,6 +450,12 @@ export function TryItSection() {
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [photoSourceMode, setPhotoSourceMode] = useState<"upload" | "model">("upload");
+  const [userModels, setUserModels] = useState<UserModelPhoto[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  const [modelPickerDraftId, setModelPickerDraftId] = useState<number | null>(null);
   const [productLinks, setProductLinks] = useState<ProductLinkItem[]>([]);
   const [linkInput, setLinkInput] = useState("");
   const [sceneDesc, setSceneDesc] = useState("");
@@ -480,6 +499,39 @@ export function TryItSection() {
   // Confirmation Modal State
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setUserModels([]);
+      setSelectedModelId(null);
+      return;
+    }
+    const loadModels = async () => {
+      setLoadingModels(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/models`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const rows = Array.isArray(data) ? data : [];
+        setUserModels(rows);
+        const defaultOne = rows.find((m: UserModelPhoto) => m.is_default) || rows[0];
+        if (defaultOne) {
+          setSelectedModelId(defaultOne.id);
+          if (!photoFile) setPhotoSourceMode("model");
+        }
+      } catch {
+        // no-op
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+    loadModels();
+  }, [user]);
+
+  const selectedModel = userModels.find((m) => m.id === selectedModelId) || null;
+
   // Calculate total cost
   const totalCost = (costConfig ? (
     (creativeMode === "copy" ? costConfig.cost_same_style : costConfig.cost_new_inspiration) +
@@ -510,6 +562,7 @@ export function TryItSection() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoSourceMode("upload");
     setPhotoFile(file);
     setErrors((prev) => ({ ...prev, photo: undefined }));
     const reader = new FileReader();
@@ -710,7 +763,11 @@ export function TryItSection() {
   // ── Validation & generation ─────────────────────────────
   const validate = (): boolean => {
     const newErrors: { photo?: string; link?: string } = {};
-    if (!photoFile) newErrors.photo = t("tryValidationPhoto");
+    if (photoSourceMode === "upload") {
+      if (!photoFile) newErrors.photo = t("tryValidationPhoto");
+    } else if (!selectedModelId) {
+      newErrors.photo = lang === "zh" ? "请先从模特库选择照片" : "Please select a model photo first";
+    }
     if (productInputMode === "link" && productLinks.length === 0) {
       newErrors.link = t("tryValidationLink");
     } else if (productInputMode === "image" && productImageFiles.length === 0) {
@@ -751,7 +808,8 @@ export function TryItSection() {
     setLatestProductTitles([]);
     setCommunityPublished(false);
     const request: GenerateRequest = {
-      photo: photoFile!,
+      photo: photoSourceMode === "upload" ? (photoFile || undefined) : undefined,
+      modelPhotoId: photoSourceMode === "model" ? (selectedModelId || undefined) : undefined,
       productLinks: productInputMode === "link" ? productLinks.map((link) => ({ 
         url: link.url, 
         product: link.product,
@@ -787,8 +845,12 @@ export function TryItSection() {
            const productImg = productInputMode === "image" 
              ? (productImagePreviews[0] || "") 
              : (productLinks[0]?.product?.image || "");
+           const selectedModel = userModels.find((m) => m.id === selectedModelId);
+           const usedUserImage = photoSourceMode === "model" && selectedModel
+             ? selectedModel.image_url
+             : photoPreview;
            saveGeneration({
-             userImage: photoPreview, 
+             userImage: usedUserImage, 
              productImage: productImg,
              productImages: productInputMode === "image" ? productImagePreviews : [productImg],
              resultImage: results[0].src,
@@ -1155,60 +1217,172 @@ export function TryItSection() {
                 {t("tryPhotoLabel")}
                 <span className="text-red-400 ml-0.5">*</span>
               </label>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(237,229,216,0.35)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoSourceMode("upload")}
+                    className="px-3 py-1.5 rounded-lg text-xs transition-all"
+                    style={{
+                      color: photoSourceMode === "upload" ? "#FFFCF8" : "#8B5E3C",
+                      background: photoSourceMode === "upload"
+                        ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                        : "transparent",
+                    }}
+                  >
+                    {lang === "zh" ? "上传照片" : "Upload"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoSourceMode("model")}
+                    className="px-3 py-1.5 rounded-lg text-xs transition-all"
+                    style={{
+                      color: photoSourceMode === "model" ? "#FFFCF8" : "#8B5E3C",
+                      background: photoSourceMode === "model"
+                        ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                        : "transparent",
+                    }}
+                  >
+                    {lang === "zh" ? "从模特库选择" : "Choose from models"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.location.assign("/my-models")}
+                  className="text-[#A0714A] hover:text-[#8B5E3C] text-xs"
+                >
+                  {lang === "zh" ? "管理我的模特" : "Manage My Models"}
+                </button>
+              </div>
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleFileSelect} />
-              <div
-                className={`border border-dashed rounded-xl text-center cursor-pointer transition-all duration-300 group ${
-                  errors.photo ? "border-red-300 bg-red-50/30" : "border-primary/15 hover:border-primary/30"
-                }`}
-                style={{ background: errors.photo ? undefined : "rgba(237,229,216,0.2)" }}
-                onClick={() => !photoPreview && fileInputRef.current?.click()}
-              >
-                {photoPreview ? (
-                  <div className="relative p-3">
-                    {/* Full-width image preview */}
-                    <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: "45vh" }}>
-                      <img
-                        src={photoPreview}
-                        alt="Preview"
-                        className="w-full h-full object-contain rounded-xl"
-                        style={{ maxHeight: "45vh" }}
-                      />
-                      {/* Floating action buttons */}
-                      <div className="absolute top-2.5 right-2.5 flex gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                          className="backdrop-blur-md text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5"
-                          style={{ fontSize: "0.72rem", background: "rgba(44,31,20,0.45)" }}
-                        >
-                          <Upload className="w-3 h-3" />
-                          {t("tryPhotoChange")}
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); removePhoto(); }}
-                          className="backdrop-blur-md text-white/90 hover:text-red-300 transition-all p-1.5 rounded-lg"
-                          style={{ background: "rgba(44,31,20,0.45)" }}
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      {/* Uploaded badge */}
-                      <div
-                        className="absolute bottom-2.5 left-2.5 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                        style={{ background: "rgba(44,31,20,0.4)" }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span className="text-white/90" style={{ fontSize: "0.68rem" }}>{t("tryPhotoUploaded")}</span>
+              {photoSourceMode === "upload" ? (
+                <div
+                  className={`border border-dashed rounded-xl text-center cursor-pointer transition-all duration-300 group ${
+                    errors.photo ? "border-red-300 bg-red-50/30" : "border-primary/15 hover:border-primary/30"
+                  }`}
+                  style={{ background: errors.photo ? undefined : "rgba(237,229,216,0.2)" }}
+                  onClick={() => !photoPreview && fileInputRef.current?.click()}
+                >
+                  {photoPreview ? (
+                    <div className="relative p-3">
+                      <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: "45vh" }}>
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="w-full h-full object-contain rounded-xl"
+                          style={{ maxHeight: "45vh" }}
+                        />
+                        <div className="absolute top-2.5 right-2.5 flex gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                            className="backdrop-blur-md text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                            style={{ fontSize: "0.72rem", background: "rgba(44,31,20,0.45)" }}
+                          >
+                            <Upload className="w-3 h-3" />
+                            {t("tryPhotoChange")}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removePhoto(); }}
+                            className="backdrop-blur-md text-white/90 hover:text-red-300 transition-all p-1.5 rounded-lg"
+                            style={{ background: "rgba(44,31,20,0.45)" }}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-8">
-                    <Upload className="w-6 h-6 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
-                    <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>{t("tryPhotoUpload")}</p>
-                    <p className="text-muted-foreground/50 mt-1" style={{ fontSize: "0.75rem" }}>{t("tryPhotoFormat")}</p>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="p-8">
+                      <Upload className="w-6 h-6 mx-auto mb-3 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+                      <p className="text-muted-foreground" style={{ fontSize: "0.85rem" }}>{t("tryPhotoUpload")}</p>
+                      <p className="text-muted-foreground/50 mt-1" style={{ fontSize: "0.75rem" }}>{t("tryPhotoFormat")}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className={`border rounded-xl p-3 transition-all ${
+                    errors.photo ? "border-red-300 bg-red-50/30" : "border-primary/15 bg-[rgba(237,229,216,0.2)]"
+                  }`}
+                >
+                  {loadingModels ? (
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      {lang === "zh" ? "加载模特库中..." : "Loading model library..."}
+                    </p>
+                  ) : userModels.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-6 text-center">
+                      {lang === "zh" ? "你还没有模特照片，先去“我的模特”上传一张吧" : "No models yet. Upload one in My Models first."}
+                    </p>
+                  ) : (
+                    <div>
+                      {selectedModel ? (
+                        <div className="relative">
+                          <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: "45vh" }}>
+                            <img
+                              src={selectedModel.image_url}
+                              alt={selectedModel.name || "Model"}
+                              className="w-full h-full object-contain rounded-xl"
+                              style={{ maxHeight: "45vh" }}
+                            />
+                            <div className="absolute top-2.5 right-2.5 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setModelPickerDraftId(selectedModelId);
+                                  setModelPickerOpen(true);
+                                }}
+                                className="backdrop-blur-md text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                                style={{ fontSize: "0.72rem", background: "rgba(44,31,20,0.45)" }}
+                              >
+                                <Upload className="w-3 h-3" />
+                                {lang === "zh" ? "点击选择模特" : "Choose Model"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedModelId(null);
+                                }}
+                                className="backdrop-blur-md text-white/90 hover:text-red-300 transition-all p-1.5 rounded-lg"
+                                style={{ background: "rgba(44,31,20,0.45)" }}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div
+                              className="absolute bottom-2.5 left-2.5 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                              style={{ background: "rgba(44,31,20,0.4)" }}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              <span className="text-white/90" style={{ fontSize: "0.68rem" }}>
+                                {selectedModel.name || (lang === "zh" ? "已选模特" : "Model selected")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModelPickerDraftId(selectedModelId ?? userModels.find((m) => m.is_default)?.id ?? userModels[0]?.id ?? null);
+                              setModelPickerOpen(true);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors"
+                            style={{ fontSize: "0.82rem" }}
+                          >
+                            {lang === "zh" ? "点击选择模特" : "Choose Model"}
+                          </button>
+                          <p className="text-muted-foreground/60 mt-2" style={{ fontSize: "0.72rem" }}>
+                            {lang === "zh" ? "从模特库中选择一张照片作为人物图" : "Pick one photo from your model library"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               {errors.photo && (
                 <p className="flex items-center gap-1.5 mt-2 text-red-400" style={{ fontSize: "0.75rem" }}>
                   <AlertCircle className="w-3.5 h-3.5" />
@@ -1912,6 +2086,91 @@ export function TryItSection() {
         isOpen={modeModalOpen}
         onClose={() => setModeModalOpen(false)}
       />
+
+      {modelPickerOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModelPickerOpen(false)} />
+          <div className="relative w-full max-w-4xl h-[76vh] rounded-2xl overflow-hidden bg-[#FDF9F4] border border-[#E8C3BA]/40 shadow-2xl flex">
+            <button
+              type="button"
+              onClick={() => setModelPickerOpen(false)}
+              className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-[38%] border-r border-[#E8C3BA]/30 bg-white/45 overflow-y-auto p-3">
+              <p className="text-xs text-muted-foreground mb-3">
+                {lang === "zh" ? "选择模特缩略图" : "Choose a model thumbnail"}
+              </p>
+              <div className="space-y-2">
+                {userModels.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setModelPickerDraftId(m.id)}
+                    className={`w-full p-2 rounded-xl border text-left transition-all ${
+                      modelPickerDraftId === m.id
+                        ? "border-[#A0714A] bg-[#A0714A]/8"
+                        : "border-[#E8C3BA]/35 bg-white/70 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <img src={m.image_url} alt={m.name || "model"} className="w-14 h-16 rounded-lg object-cover flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-[#5C3D24] truncate">{m.name || (lang === "zh" ? "未命名模特" : "Untitled model")}</p>
+                        {m.is_default && (
+                          <span className="inline-block mt-1 text-[11px] px-1.5 py-0.5 rounded bg-[#A0714A] text-white">
+                            {lang === "zh" ? "默认" : "Default"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 flex flex-col">
+              <p className="text-xs text-muted-foreground mb-3">{lang === "zh" ? "大图预览" : "Large preview"}</p>
+              <div className="flex-1 rounded-xl border border-[#E8C3BA]/35 bg-white/65 overflow-hidden flex items-center justify-center">
+                {(() => {
+                  const draft = userModels.find((m) => m.id === modelPickerDraftId);
+                  if (!draft) {
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        {lang === "zh" ? "请先从左侧选择一个模特" : "Please pick one model from the left"}
+                      </p>
+                    );
+                  }
+                  return (
+                    <img
+                      src={draft.image_url}
+                      alt={draft.name || "model"}
+                      className="w-full h-full object-contain"
+                    />
+                  );
+                })()}
+              </div>
+              <div className="pt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!modelPickerDraftId) return;
+                    setSelectedModelId(modelPickerDraftId);
+                    setErrors((prev) => ({ ...prev, photo: undefined }));
+                    setModelPickerOpen(false);
+                  }}
+                  disabled={!modelPickerDraftId}
+                  className="px-5 py-2 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors disabled:opacity-50"
+                >
+                  {lang === "zh" ? "选定" : "Confirm"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal */}
       {confirmModalOpen && (

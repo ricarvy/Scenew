@@ -28,6 +28,8 @@ export function GenerationsPage() {
   const [wardrobeBulkTargets, setWardrobeBulkTargets] = useState<Array<{ imageUrl: string; title?: string; category: string }>>([]);
   const [addingWardrobeBulk, setAddingWardrobeBulk] = useState(false);
   const [publishingCommunity, setPublishingCommunity] = useState(false);
+  const [myModels, setMyModels] = useState<Array<{ id: number; image_url: string }>>([]);
+  const [addingUserPhotoToModels, setAddingUserPhotoToModels] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -58,6 +60,18 @@ export function GenerationsPage() {
        setLoading(false);
     }
     window.scrollTo(0, 0);
+  }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+    fetch(`${API_BASE}/models`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows) => setMyModels(Array.isArray(rows) ? rows : []))
+      .catch(() => setMyModels([]));
   }, [user]);
 
   const formatDate = (timestamp: number) => {
@@ -284,6 +298,45 @@ export function GenerationsPage() {
       toast.error(lang === "zh" ? "发布失败，请稍后重试" : "Publish failed, please retry");
     } finally {
       setPublishingCommunity(false);
+    }
+  };
+
+  const addUserPhotoToModels = async () => {
+    if (!selectedGen) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+    setAddingUserPhotoToModels(true);
+    try {
+      const res = await fetch(`${API_BASE}/models/from-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          image_url: selectedGen.userImage,
+          name: lang === "zh" ? "来自生成记录的模特" : "From generation record",
+          set_default: false,
+        }),
+      });
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+      if (!res.ok) throw new Error("failed");
+      const created = await res.json();
+      if (created?.id) {
+        setMyModels((prev) => [...prev, { id: created.id, image_url: created.image_url }]);
+      }
+      toast.success(lang === "zh" ? "已加入模特库，下次可直接选择" : "Saved to model library");
+    } catch {
+      toast.error(lang === "zh" ? "加入模特库失败" : "Failed to save to model library");
+    } finally {
+      setAddingUserPhotoToModels(false);
     }
   };
 
@@ -527,6 +580,26 @@ export function GenerationsPage() {
                       <div className="aspect-[3/4] w-32 rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm group cursor-zoom-in">
                         <img src={selectedGen.userImage} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt="User" />
                       </div>
+                      {selectedGen.userImage &&
+                        !myModels.some((m) => m.image_url === selectedGen.userImage) && (
+                          <div className="mt-2 w-full rounded-lg border border-[#A0714A]/20 bg-[#FAF6F0] p-2.5">
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              {lang === "zh"
+                                ? "这张人物图不在你的模特库里，建议加入，下一次可直接选取。"
+                                : "This person image is not in your model library yet. Save it for faster reuse next time."}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={addUserPhotoToModels}
+                              disabled={addingUserPhotoToModels}
+                              className="w-full py-1.5 rounded-lg bg-[#A0714A] text-white text-xs hover:bg-[#8B5E3C] disabled:opacity-60"
+                            >
+                              {addingUserPhotoToModels
+                                ? (lang === "zh" ? "处理中..." : "Saving...")
+                                : (lang === "zh" ? "加入模特库" : "Add to Model Library")}
+                            </button>
+                          </div>
+                        )}
                     </div>
 
                     {/* Product Photos (Swiper) */}
