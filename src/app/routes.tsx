@@ -13,6 +13,7 @@ import { WardrobePage } from "./components/WardrobePage";
 import { CommunityPage } from "./components/CommunityPage";
 import { MessagesPage } from "./components/MessagesPage";
 import { UserProfilePage } from "./components/UserProfilePage";
+import { AvatarEntryAuthGuard } from "./components/AvatarEntryAuthGuard";
 
 export const router = createBrowserRouter([
   {
@@ -24,11 +25,16 @@ export const router = createBrowserRouter([
       { path: "pricing", Component: PricingPage },
       { path: "blog", Component: BlogListPage },
       { path: "blog/:id", Component: BlogDetailPage },
-      { path: "generations", Component: GenerationsPage },
-      { path: "wardrobe", Component: WardrobePage },
-      { path: "payment-history", Component: PaymentHistoryPage },
       { path: "community", Component: CommunityPage },
-      { path: "messages", Component: MessagesPage },
+      {
+        Component: AvatarEntryAuthGuard,
+        children: [
+          { path: "generations", Component: GenerationsPage },
+          { path: "wardrobe", Component: WardrobePage },
+          { path: "payment-history", Component: PaymentHistoryPage },
+          { path: "messages", Component: MessagesPage },
+        ],
+      },
       { path: "user/:userId", Component: UserProfilePage },
       { path: "privacy", Component: PrivacyPage },
       { path: "terms", Component: TermsPage },
