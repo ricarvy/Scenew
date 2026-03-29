@@ -64,7 +64,7 @@ interface GenerateRequest {
   creativeMode?: "copy" | "inspire";
   sceneImage?: File;
   seedMode?: boolean;
-  productImage?: File;
+  productImages?: File[];
   productInputMode?: "link" | "image";
 }
 
@@ -75,12 +75,18 @@ interface GenerateResult {
   generatedCopy?: string;
 }
 
+interface GenerateSceneResponse {
+  results: GenerateResult[];
+  generationId?: number;
+  productImageUrls: string[];
+}
+
 /**
  * Call the scene generation backend API.
  */
 async function generateSceneImages(
   request: GenerateRequest
-): Promise<GenerateResult[]> {
+): Promise<GenerateSceneResponse> {
   const formData = new FormData();
   formData.append("photo", request.photo);
   
@@ -110,8 +116,12 @@ async function generateSceneImages(
     if (request.sceneImage) {
       formData.append("scene_image", request.sceneImage);
     }
-    if (request.productImage) {
-      formData.append("product_image", request.productImage);
+    if (request.productImages && request.productImages.length > 0) {
+      request.productImages.forEach((file) => {
+        formData.append("product_images", file);
+      });
+      // Backward compatibility for servers that still read single product_image
+      formData.append("product_image", request.productImages[0]);
     }
     if (request.productInputMode) {
       formData.append("product_input_mode", request.productInputMode);
@@ -160,12 +170,20 @@ async function generateSceneImages(
   const ensureUrl = (url: string) => 
     url.startsWith("http") ? url : `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 
-  return (data.result_image_urls || []).map((url: string) => ({
+  const results = (data.result_image_urls || []).map((url: string) => ({
     src: ensureUrl(url),
     labelZh: "生成结果",
     labelEn: "Generated Result",
     generatedCopy: data.generated_copy
   }));
+
+  return {
+    results,
+    generationId: typeof data.generation_id === "number" ? data.generation_id : undefined,
+    productImageUrls: Array.isArray(data.product_image_urls)
+      ? data.product_image_urls.map((url: string) => ensureUrl(url))
+      : [],
+  };
 }
 
 // ── Product Link Item ────────────────────────────────────────
@@ -433,11 +451,17 @@ export function TryItSection() {
   >([]);
   const [generateError, setGenerateError] = useState<string>("");
   const [seedMode, setSeedMode] = useState(false);
+  const [latestGenerationId, setLatestGenerationId] = useState<number | null>(null);
+  const [latestProductImageUrls, setLatestProductImageUrls] = useState<string[]>([]);
+  const [latestProductTitles, setLatestProductTitles] = useState<string[]>([]);
+  const [addingWardrobeBulk, setAddingWardrobeBulk] = useState(false);
+  const [publishingCommunity, setPublishingCommunity] = useState(false);
+  const [communityPublished, setCommunityPublished] = useState(false);
 
   // Product input mode: "link" or "image"
   const [productInputMode, setProductInputMode] = useState<"link" | "image">("link");
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string>("");
+  const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
+  const [productImagePreviews, setProductImagePreviews] = useState<string[]>([]);
   const productImageInputRef = useRef<HTMLInputElement>(null);
 
   // Mode explanation modal
@@ -649,11 +673,31 @@ export function TryItSection() {
   const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setProductImageFile(file);
+    if (productImageFiles.length >= 5) {
+      toast.info(t("tryLinkMax"));
+      if (productImageInputRef.current) productImageInputRef.current.value = "";
+      return;
+    }
+    const duplicate = productImageFiles.some(
+      (f) => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified,
+    );
+    if (duplicate) {
+      if (productImageInputRef.current) productImageInputRef.current.value = "";
+      return;
+    }
     const reader = new FileReader();
-    reader.onloadend = () => setProductImagePreview(reader.result as string);
+    reader.onloadend = () => {
+      setProductImageFiles((prev) => [...prev, file]);
+      setProductImagePreviews((prev) => [...prev, (reader.result as string) || ""]);
+    };
     reader.readAsDataURL(file);
     setErrors((prev) => ({ ...prev, link: undefined }));
+    if (productImageInputRef.current) productImageInputRef.current.value = "";
+  };
+
+  const removeProductImage = (index: number) => {
+    setProductImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setProductImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleProductModeSwitch = (mode: "link" | "image") => {
@@ -669,7 +713,7 @@ export function TryItSection() {
     if (!photoFile) newErrors.photo = t("tryValidationPhoto");
     if (productInputMode === "link" && productLinks.length === 0) {
       newErrors.link = t("tryValidationLink");
-    } else if (productInputMode === "image" && !productImageFile) {
+    } else if (productInputMode === "image" && productImageFiles.length === 0) {
       newErrors.link = t("tryValidationProduct");
     }
     setErrors(newErrors);
@@ -702,6 +746,10 @@ export function TryItSection() {
     setGenerated(false);
     setSelectedResult(null);
     setGenerateError("");
+    setLatestGenerationId(null);
+    setLatestProductImageUrls([]);
+    setLatestProductTitles([]);
+    setCommunityPublished(false);
     const request: GenerateRequest = {
       photo: photoFile!,
       productLinks: productInputMode === "link" ? productLinks.map((link) => ({ 
@@ -714,23 +762,35 @@ export function TryItSection() {
       creativeMode: creativeMode,
       sceneImage: sceneImageFile || undefined,
       seedMode: productInputMode === "link" ? seedMode : false,
-      productImage: productInputMode === "image" ? productImageFile || undefined : undefined,
+      productImages: productInputMode === "image" ? productImageFiles : undefined,
       productInputMode,
     };
       generateSceneImages(request)
-      .then((results) => {
+      .then((payload) => {
+        const results = payload.results;
         setIsGenerating(false);
         setGenerated(true);
         setGeneratedResults(results);
+        setLatestGenerationId(payload.generationId ?? null);
+        setLatestProductImageUrls(
+          payload.productImageUrls.length > 0
+            ? payload.productImageUrls
+            : (productInputMode === "image" ? productImagePreviews : []),
+        );
+        setLatestProductTitles(
+          productInputMode === "link"
+            ? productLinks.map((link) => link.product?.title || "")
+            : productImageFiles.map((f) => f.name || ""),
+        );
         
         if (results.length > 0) {
            const productImg = productInputMode === "image" 
-             ? productImagePreview 
+             ? (productImagePreviews[0] || "") 
              : (productLinks[0]?.product?.image || "");
            saveGeneration({
              userImage: photoPreview, 
              productImage: productImg,
-             productImages: [productImg],
+             productImages: productInputMode === "image" ? productImagePreviews : [productImg],
              resultImage: results[0].src,
              resultImages: results.map(r => r.src),
              prompt: sceneDesc || (lang === "zh" ? "自动生成场景" : "Auto generated scene"),
@@ -800,6 +860,98 @@ export function TryItSection() {
       document.execCommand("copy");
       document.body.removeChild(input);
       toast.success(lang === "zh" ? "已经复制到剪贴板" : "Copied to clipboard");
+    }
+  };
+
+  const handleAddAllToWardrobe = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    const sourceImages = latestProductImageUrls.length > 0
+      ? latestProductImageUrls
+      : (productInputMode === "image" ? productImagePreviews : []);
+    if (sourceImages.length === 0) {
+      toast.info(lang === "zh" ? "暂无可加入衣橱的商品图" : "No product images to add");
+      return;
+    }
+    setAddingWardrobeBulk(true);
+    try {
+      const catRes = await fetch(`${API_BASE_URL}/wardrobe/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      let targetCategory = "dress";
+      if (catRes.ok) {
+        const cats: Array<{ id: number; name: string }> = await catRes.json();
+        if (cats.length > 0) targetCategory = cats[0].name;
+      }
+      await Promise.all(
+        sourceImages.map((img, idx) =>
+          fetch(`${API_BASE_URL}/wardrobe/items`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              category: targetCategory,
+              product_image_url: img,
+              product_title: latestProductTitles[idx] || "",
+              source_generation_id: latestGenerationId,
+            }),
+          }).then((res) => {
+            if (!res.ok) throw new Error("add wardrobe failed");
+          }),
+        ),
+      );
+      toast.success(lang === "zh" ? "已一键加入衣橱" : "Added all to wardrobe");
+    } catch (err) {
+      console.error(err);
+      toast.error(lang === "zh" ? "加入衣橱失败" : "Failed to add to wardrobe");
+    } finally {
+      setAddingWardrobeBulk(false);
+    }
+  };
+
+  const publishToCommunity = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.dispatchEvent(new Event("scenew:unauthorized"));
+      return;
+    }
+    if (!latestGenerationId) {
+      toast.info(lang === "zh" ? "暂无可发布的生成记录" : "No generation record to publish");
+      return;
+    }
+    setPublishingCommunity(true);
+    try {
+      if (communityPublished) {
+        const res = await fetch(`${API_BASE_URL}/community/publish/${latestGenerationId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("unpublish failed");
+        setCommunityPublished(false);
+        toast.success(lang === "zh" ? "已设为仅自己可见" : "Set to private");
+      } else {
+        const res = await fetch(`${API_BASE_URL}/community/publish`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ generation_id: latestGenerationId }),
+        });
+        if (!res.ok) throw new Error("publish failed");
+        setCommunityPublished(true);
+        toast.success(lang === "zh" ? "已发布到社区" : "Published to community");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(lang === "zh" ? "发布失败，请重试" : "Failed to publish");
+    } finally {
+      setPublishingCommunity(false);
     }
   };
 
@@ -1222,56 +1374,81 @@ export function TryItSection() {
                     className="hidden"
                     onChange={handleProductImageSelect}
                   />
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-muted-foreground/60" style={{ fontSize: "0.7rem" }}>
+                      {lang === "zh" ? "每次上传 1 张，最多 5 张" : "Upload one at a time, up to 5 images"}
+                    </span>
+                    <span
+                      className="px-2 py-0.5 rounded-full"
+                      style={{
+                        fontSize: "0.65rem",
+                        color: "#A0714A",
+                        background: "rgba(160,113,74,0.08)",
+                      }}
+                    >
+                      {productImageFiles.length}/5
+                    </span>
+                  </div>
                   <div
-                    onClick={() => productImageInputRef.current?.click()}
+                    onClick={() => {
+                      if (productImageFiles.length < 5) {
+                        productImageInputRef.current?.click();
+                      }
+                    }}
                     className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer group ${
                       errors.link
                         ? "border-red-300 bg-red-50/20"
-                        : productImagePreview
+                        : productImagePreviews.length > 0
                         ? "border-[#A0714A]/30 bg-[#A0714A]/5"
                         : "border-[#A0714A]/15 hover:border-[#A0714A]/35 bg-[rgba(237,229,216,0.2)] hover:bg-[rgba(237,229,216,0.35)]"
                     }`}
-                    style={{ minHeight: productImagePreview ? "auto" : "140px" }}
+                    style={{ minHeight: productImagePreviews.length > 0 ? "auto" : "140px" }}
                   >
-                    {productImagePreview ? (
-                      <div className="flex items-center gap-4 p-4">
-                        <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-white/50">
-                          <img
-                            src={productImagePreview}
-                            alt="Product"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: "#5C3D24" }}>
-                            {t("tryProductImageUploaded")}
-                          </p>
-                          <p className="text-muted-foreground/60 mt-1" style={{ fontSize: "0.75rem" }}>
-                            {productImageFile?.name}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              productImageInputRef.current?.click();
-                            }}
-                            className="mt-2 text-[#A0714A] hover:text-[#8B5E3C] transition-colors"
-                            style={{ fontSize: "0.78rem" }}
-                          >
-                            {t("tryProductImageChange")}
-                          </button>
+                    {productImagePreviews.length > 0 ? (
+                      <div className="p-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {productImagePreviews.map((preview, idx) => (
+                            <div
+                              key={`${productImageFiles[idx]?.name || "img"}-${idx}`}
+                              className="relative rounded-lg overflow-hidden border border-[#E8C3BA]/35 bg-white/60"
+                            >
+                              <img src={preview} alt={`Product ${idx + 1}`} className="w-full h-28 object-cover" />
+                              <div className="absolute inset-x-0 bottom-0 px-2 py-1 bg-black/35 backdrop-blur-sm">
+                                <p className="text-white/90 truncate" style={{ fontSize: "0.65rem" }}>
+                                  {productImageFiles[idx]?.name}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeProductImage(idx);
+                                }}
+                                className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/45 text-white/90 hover:text-red-300 transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                         <button
                           type="button"
+                          disabled={productImageFiles.length >= 5}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setProductImageFile(null);
-                            setProductImagePreview("");
+                            productImageInputRef.current?.click();
                           }}
-                          className="p-1.5 rounded-full hover:bg-red-50 text-muted-foreground/40 hover:text-red-400 transition-colors flex-shrink-0"
+                          className="mt-3 text-[#A0714A] hover:text-[#8B5E3C] transition-colors disabled:opacity-40"
+                          style={{ fontSize: "0.78rem" }}
                         >
-                          <X className="w-4 h-4" />
+                          {lang === "zh" ? "继续添加图片" : "Add another image"}
                         </button>
+                        {productImageFiles.length >= 5 && (
+                          <p className="text-amber-600 mt-2 flex items-center gap-1" style={{ fontSize: "0.72rem" }}>
+                            <AlertCircle className="w-3 h-3" />
+                            {t("tryLinkMax")}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-8 px-4">
@@ -1637,6 +1814,33 @@ export function TryItSection() {
                     </div>
                   </div>
                 )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={handleAddAllToWardrobe}
+                    disabled={addingWardrobeBulk || (latestProductImageUrls.length === 0 && productImagePreviews.length === 0)}
+                    className="w-full py-3 rounded-xl bg-[#A0714A] text-white font-medium hover:bg-[#8B5E3C] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Package className="w-4 h-4" />
+                    {addingWardrobeBulk
+                      ? (lang === "zh" ? "处理中..." : "Saving...")
+                      : (lang === "zh" ? "一键加入衣橱" : "Add All to Wardrobe")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={publishToCommunity}
+                    disabled={publishingCommunity || !latestGenerationId}
+                    className="w-full py-3 rounded-xl border border-[#A0714A] text-[#A0714A] font-medium hover:bg-[#A0714A]/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    {publishingCommunity
+                      ? (lang === "zh" ? "处理中..." : "Processing...")
+                      : communityPublished
+                      ? (lang === "zh" ? "仅自己可见" : "Set Private")
+                      : (lang === "zh" ? "发布到社区" : "Publish to Community")}
+                  </button>
+                </div>
               </div>
             ) : isGenerating ? (
               <div

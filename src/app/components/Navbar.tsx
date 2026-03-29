@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon, Receipt, Shirt } from "lucide-react";
+import { Menu, X, ChevronDown, Globe, User, Image as ImageIcon, Receipt, Shirt, MessageCircle } from "lucide-react";
 import { useI18n, Lang } from "./I18nContext";
 import { LoginModal } from "./LoginModal";
 import { RegisterModal } from "./RegisterModal";
@@ -14,6 +14,7 @@ export function Navbar() {
   // const [registerOpen, setRegisterOpen] = useState(false); // Moved to Context
   const [profileOpen, setProfileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const langRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { 
@@ -58,6 +59,36 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | undefined;
+    const fetchUnread = async () => {
+      if (!user) {
+        if (!cancelled) setUnreadCount(0);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+        const res = await fetch(`${API_BASE}/messages/unread-count`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setUnreadCount(Number(data.unread_count || 0));
+      } catch {
+        // no-op
+      }
+    };
+    fetchUnread();
+    timer = window.setInterval(fetchUnread, 30000);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearInterval(timer);
+    };
+  }, [user]);
+
   const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
@@ -70,7 +101,18 @@ export function Navbar() {
     { label: t("navHow"), href: "#how-it-works" },
     { label: t("navShowcase"), href: "#showcase" },
     { label: t("navFeatures"), href: "#features" },
-    { label: "社区", href: "/community" },
+    {
+      label: ({
+        zh: "社区",
+        en: "Community",
+        hi: "समुदाय",
+        es: "Comunidad",
+        ar: "المجتمع",
+        fr: "Communauté",
+        ja: "コミュニティ",
+      } as Record<Lang, string>)[lang],
+      href: "/community",
+    },
     { label: t("navBlog"), href: "/blog" },
     { label: t("navPricing"), href: "/pricing" },
     { label: t("contactLabel"), href: "#contact", onClick: () => setContactOpen(true) },
@@ -227,11 +269,14 @@ export function Navbar() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-muted/50 transition-colors border border-transparent hover:border-border/50"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium overflow-hidden">
+                  <div className="relative w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium overflow-hidden">
                     {user.avatar ? (
                       <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
                     ) : (
                       user.username.charAt(0).toUpperCase()
+                    )}
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
                     )}
                   </div>
                   <span className="text-sm font-medium text-foreground max-w-[100px] truncate hidden md:block">
@@ -268,6 +313,19 @@ export function Navbar() {
                     >
                       <ImageIcon className="w-4 h-4 text-muted-foreground" />
                       {t("navGenerations")}
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/messages");
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                      {lang === "zh" ? "我的消息" : "My Messages"}
+                      {unreadCount > 0 && (
+                        <span className="ml-auto w-2 h-2 rounded-full bg-red-500" />
+                      )}
                     </button>
                     <button
                       onClick={() => {
@@ -337,11 +395,14 @@ export function Navbar() {
             {user && (
               <div className="flex flex-col gap-4 pb-4 border-b border-border/40">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg overflow-hidden">
+                  <div className="relative w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg overflow-hidden">
                     {user.avatar ? (
                       <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
                     ) : (
                       user.username.charAt(0).toUpperCase()
+                    )}
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
                     )}
                   </div>
                   <div>
@@ -371,6 +432,19 @@ export function Navbar() {
                   >
                     <ImageIcon className="w-4 h-4 text-muted-foreground" />
                     {t("navGenerations")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/messages");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm relative"
+                  >
+                    <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                    {lang === "zh" ? "消息" : "Messages"}
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                    )}
                   </button>
                   <button
                     onClick={() => {
