@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useLocation } from "react-router";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -17,6 +18,7 @@ import {
   ExternalLink,
   ShoppingBag,
   Package,
+  Shirt,
   Copy,
   HelpCircle,
   Layers,
@@ -66,7 +68,7 @@ interface GenerateRequest {
   sceneImage?: File;
   seedMode?: boolean;
   productImages?: File[];
-  productInputMode?: "link" | "image";
+  productInputMode?: "wardrobe" | "link" | "image";
 }
 
 interface GenerateResult {
@@ -87,6 +89,30 @@ interface UserModelPhoto {
   name: string;
   image_url: string;
   is_default: boolean;
+}
+
+interface WardrobeProduct {
+  id: number;
+  category: string;
+  product_image_url: string;
+  product_title?: string | null;
+}
+
+interface CommunityPrefillPayload {
+  generationId?: number;
+  mode?: "copy" | "inspire";
+  productInputMode?: "wardrobe" | "link" | "image";
+  productImages?: string[];
+  productTitles?: string[];
+  productLinks?: Array<{
+    url?: string;
+    title?: string;
+    selected_image?: string;
+    platform?: string;
+    shop_name?: string;
+    price?: string;
+    currency?: string;
+  }>;
 }
 
 /**
@@ -442,6 +468,7 @@ function ProductCard({
 // ── Main Component ──────────────────────────────────────────
 export function TryItSection() {
   const { t, lang, costConfig, user, refreshUser } = useI18n();
+  const location = useLocation();
   const sectionRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -456,6 +483,8 @@ export function TryItSection() {
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [modelPickerDraftId, setModelPickerDraftId] = useState<number | null>(null);
+  const [externalProductImages, setExternalProductImages] = useState<string[]>([]);
+  const [externalProductTitles, setExternalProductTitles] = useState<string[]>([]);
   const [productLinks, setProductLinks] = useState<ProductLinkItem[]>([]);
   const [linkInput, setLinkInput] = useState("");
   const [sceneDesc, setSceneDesc] = useState("");
@@ -477,11 +506,17 @@ export function TryItSection() {
   const [publishingCommunity, setPublishingCommunity] = useState(false);
   const [communityPublished, setCommunityPublished] = useState(false);
 
-  // Product input mode: "link" or "image"
-  const [productInputMode, setProductInputMode] = useState<"link" | "image">("link");
+  // Product input mode: "wardrobe" | "link" | "image"
+  const [productInputMode, setProductInputMode] = useState<"wardrobe" | "link" | "image">("wardrobe");
   const [productImageFiles, setProductImageFiles] = useState<File[]>([]);
   const [productImagePreviews, setProductImagePreviews] = useState<string[]>([]);
   const productImageInputRef = useRef<HTMLInputElement>(null);
+  const [wardrobeItems, setWardrobeItems] = useState<WardrobeProduct[]>([]);
+  const [selectedWardrobeItemIds, setSelectedWardrobeItemIds] = useState<number[]>([]);
+  const [wardrobePickerOpen, setWardrobePickerOpen] = useState(false);
+  const [wardrobePickerDraftIds, setWardrobePickerDraftIds] = useState<number[]>([]);
+  const [wardrobePreviewId, setWardrobePreviewId] = useState<number | null>(null);
+  const [loadingWardrobeItems, setLoadingWardrobeItems] = useState(false);
 
   // Mode explanation modal
   const [modeModalOpen, setModeModalOpen] = useState(false);
@@ -498,6 +533,7 @@ export function TryItSection() {
 
   // Confirmation Modal State
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const appliedPrefillRef = useRef<string>("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -530,7 +566,102 @@ export function TryItSection() {
     loadModels();
   }, [user]);
 
+  const loadWardrobeItems = useCallback(async () => {
+    const tk = localStorage.getItem("token");
+    if (!tk) return;
+    setLoadingWardrobeItems(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/wardrobe/items`, {
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        return;
+      }
+      if (!res.ok) return;
+      const rows = await res.json();
+      setWardrobeItems(Array.isArray(rows) ? rows : []);
+    } catch {
+      // no-op
+    } finally {
+      setLoadingWardrobeItems(false);
+    }
+  }, []);
+
   const selectedModel = userModels.find((m) => m.id === selectedModelId) || null;
+  const selectedWardrobeProducts = wardrobeItems.filter((it) => selectedWardrobeItemIds.includes(it.id));
+  const usingLocalProductImages = productImagePreviews.length > 0;
+  const effectiveProductPreviews = productInputMode === "wardrobe"
+    ? selectedWardrobeProducts.map((it) => it.product_image_url)
+    : (usingLocalProductImages ? productImagePreviews : externalProductImages);
+  const effectiveProductTitles = productInputMode === "wardrobe"
+    ? selectedWardrobeProducts.map((it) => it.product_title || "")
+    : (usingLocalProductImages
+      ? productImageFiles.map((f) => f.name || "")
+      : externalProductTitles);
+
+  useEffect(() => {
+    const payload = (location.state as { communityPrefill?: CommunityPrefillPayload } | null)?.communityPrefill;
+    if (!payload) return;
+
+    const modeToken = payload.productInputMode || "image";
+    const linksToken = (payload.productLinks || []).map((l) => l?.url || "").join("|");
+    const imagesToken = (payload.productImages || []).join("|");
+    if (modeToken === "link" && !linksToken) return;
+    if (modeToken !== "link" && !imagesToken) return;
+
+    const prefillKey = `${payload.generationId || "na"}-${modeToken}-${linksToken}-${imagesToken}`;
+    if (appliedPrefillRef.current === prefillKey) return;
+    appliedPrefillRef.current = prefillKey;
+
+    setCreativeMode(payload.mode === "copy" ? "copy" : "inspire");
+    setProductInputMode(modeToken === "link" ? "link" : "image");
+    setSeedMode(false);
+    if (modeToken === "link") {
+      const links = (payload.productLinks || []).filter((l) => (l?.url || "").trim().length > 0);
+      setExternalProductImages([]);
+      setExternalProductTitles([]);
+      setProductImageFiles([]);
+      setProductImagePreviews([]);
+      setProductLinks(
+        links.map((l) => {
+          const url = (l.url || "").trim();
+          const selectedImage = (l.selected_image || "").trim();
+          const title = (l.title || "").trim();
+          const platform = detectPlatform(url);
+          return {
+            id: nextId(),
+            url,
+            platform,
+            status: "success" as const,
+            selectedImageIndex: 0,
+            product: {
+              title,
+              images: selectedImage ? [selectedImage] : [],
+              image: selectedImage || undefined,
+              platform: l.platform || platform.id,
+              price: l.price || "",
+              currency: l.currency || "",
+              shop_name: l.shop_name || "",
+            } as ProductInfo,
+          };
+        }),
+      );
+    } else {
+      setProductLinks([]);
+      setProductImageFiles([]);
+      setProductImagePreviews([]);
+      setExternalProductImages(Array.isArray(payload.productImages) ? payload.productImages : []);
+      setExternalProductTitles(Array.isArray(payload.productTitles) ? payload.productTitles : []);
+    }
+    setPhotoSourceMode("model");
+    setErrors((prev) => ({ ...prev, link: undefined }));
+    toast.success(lang === "zh" ? "已带入社区同款商品与模式" : "Imported products and mode from community");
+  }, [location.state, lang]);
+
+  useEffect(() => {
+    if (user) loadWardrobeItems();
+  }, [user, loadWardrobeItems]);
 
   // Calculate total cost
   const totalCost = (costConfig ? (
@@ -726,6 +857,10 @@ export function TryItSection() {
   const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!usingLocalProductImages && externalProductImages.length > 0) {
+      setExternalProductImages([]);
+      setExternalProductTitles([]);
+    }
     if (productImageFiles.length >= 5) {
       toast.info(t("tryLinkMax"));
       if (productImageInputRef.current) productImageInputRef.current.value = "";
@@ -749,14 +884,29 @@ export function TryItSection() {
   };
 
   const removeProductImage = (index: number) => {
-    setProductImageFiles((prev) => prev.filter((_, i) => i !== index));
-    setProductImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    if (productInputMode === "wardrobe") {
+      const id = selectedWardrobeProducts[index]?.id;
+      if (typeof id === "number") {
+        setSelectedWardrobeItemIds((prev) => prev.filter((x) => x !== id));
+      }
+      return;
+    }
+    if (usingLocalProductImages) {
+      setProductImageFiles((prev) => prev.filter((_, i) => i !== index));
+      setProductImagePreviews((prev) => prev.filter((_, i) => i !== index));
+      return;
+    }
+    setExternalProductImages((prev) => prev.filter((_, i) => i !== index));
+    setExternalProductTitles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleProductModeSwitch = (mode: "link" | "image") => {
+  const handleProductModeSwitch = (mode: "wardrobe" | "link" | "image") => {
     setProductInputMode(mode);
-    if (mode === "image" && seedMode) {
+    if (mode !== "link" && seedMode) {
       setSeedMode(false);
+    }
+    if (mode === "wardrobe") {
+      loadWardrobeItems();
     }
   };
 
@@ -770,8 +920,10 @@ export function TryItSection() {
     }
     if (productInputMode === "link" && productLinks.length === 0) {
       newErrors.link = t("tryValidationLink");
-    } else if (productInputMode === "image" && productImageFiles.length === 0) {
+    } else if (productInputMode === "image" && productImageFiles.length === 0 && externalProductImages.length === 0) {
       newErrors.link = t("tryValidationProduct");
+    } else if (productInputMode === "wardrobe" && selectedWardrobeItemIds.length === 0) {
+      newErrors.link = lang === "zh" ? "请先从衣橱选择商品" : "Please select products from wardrobe";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -807,15 +959,32 @@ export function TryItSection() {
     setLatestProductImageUrls([]);
     setLatestProductTitles([]);
     setCommunityPublished(false);
+    const nonLinkProducts = productInputMode !== "link"
+      ? effectiveProductPreviews.map((img, idx) => ({
+          url: img,
+          product: {
+            title: effectiveProductTitles[idx] || "",
+            images: [img],
+            platform: productInputMode === "wardrobe" ? "wardrobe" : "community",
+            price: "",
+            currency: "",
+            shop_name: "",
+          } as ProductInfo,
+          selectedImageIndex: 0,
+          platformName: productInputMode === "wardrobe" ? "wardrobe" : "community",
+        }))
+      : [];
     const request: GenerateRequest = {
       photo: photoSourceMode === "upload" ? (photoFile || undefined) : undefined,
       modelPhotoId: photoSourceMode === "model" ? (selectedModelId || undefined) : undefined,
-      productLinks: productInputMode === "link" ? productLinks.map((link) => ({ 
-        url: link.url, 
-        product: link.product,
-        selectedImageIndex: link.selectedImageIndex,
-        platformName: link.platform.name,
-      })) : [],
+      productLinks: productInputMode === "link"
+        ? productLinks.map((link) => ({
+            url: link.url,
+            product: link.product,
+            selectedImageIndex: link.selectedImageIndex,
+            platformName: link.platform.name,
+          }))
+        : nonLinkProducts,
       sceneDescription: sceneDesc,
       creativeMode: creativeMode,
       sceneImage: sceneImageFile || undefined,
@@ -833,17 +1002,17 @@ export function TryItSection() {
         setLatestProductImageUrls(
           payload.productImageUrls.length > 0
             ? payload.productImageUrls
-            : (productInputMode === "image" ? productImagePreviews : []),
+            : (productInputMode !== "link" ? effectiveProductPreviews : []),
         );
         setLatestProductTitles(
           productInputMode === "link"
             ? productLinks.map((link) => link.product?.title || "")
-            : productImageFiles.map((f) => f.name || ""),
+            : effectiveProductTitles,
         );
         
         if (results.length > 0) {
            const productImg = productInputMode === "image" 
-             ? (productImagePreviews[0] || "") 
+             ? (effectiveProductPreviews[0] || "") 
              : (productLinks[0]?.product?.image || "");
            const selectedModel = userModels.find((m) => m.id === selectedModelId);
            const usedUserImage = photoSourceMode === "model" && selectedModel
@@ -852,7 +1021,7 @@ export function TryItSection() {
            saveGeneration({
              userImage: usedUserImage, 
              productImage: productImg,
-             productImages: productInputMode === "image" ? productImagePreviews : [productImg],
+             productImages: productInputMode !== "link" ? effectiveProductPreviews : [productImg],
              resultImage: results[0].src,
              resultImages: results.map(r => r.src),
              prompt: sceneDesc || (lang === "zh" ? "自动生成场景" : "Auto generated scene"),
@@ -933,7 +1102,7 @@ export function TryItSection() {
     }
     const sourceImages = latestProductImageUrls.length > 0
       ? latestProductImageUrls
-      : (productInputMode === "image" ? productImagePreviews : []);
+      : (productInputMode !== "link" ? effectiveProductPreviews : []);
     if (sourceImages.length === 0) {
       toast.info(lang === "zh" ? "暂无可加入衣橱的商品图" : "No product images to add");
       return;
@@ -1126,91 +1295,6 @@ export function TryItSection() {
               </div>
             </div>
             
-            <div
-              className="rounded-2xl p-4 sm:p-5 transition-all duration-300"
-              style={{
-                background: seedMode
-                  ? "linear-gradient(135deg, rgba(160,113,74,0.14) 0%, rgba(255,204,102,0.10) 45%, rgba(139,94,60,0.10) 100%)"
-                  : "rgba(237,229,216,0.25)",
-                border: seedMode ? "1px solid rgba(160,113,74,0.22)" : "1px solid rgba(196,149,106,0.10)",
-                boxShadow: seedMode ? "0 10px 32px rgba(139,94,60,0.10)" : "0 2px 10px rgba(139,94,60,0.04)",
-              }}
-            >
-              <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
-                      <p className="font-medium flex items-center gap-1.5" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
-                        {lang === "zh" ? "种草模式" : "Seeding Mode"}
-                        {costConfig && costConfig.cost_seed_mode_extra > 0 && (
-                          <span className="text-[0.65rem] px-1.5 py-0.5 rounded-md bg-[#FAF6F0] text-[#A0714A] border border-[#A0714A]/20">
-                            +{costConfig.cost_seed_mode_extra} {t("profilePointsUnit")}
-                          </span>
-                        )}
-                        <button 
-                          type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setModeModalOpen(true);
-                        }}
-                        className="text-muted-foreground/50 hover:text-[#A0714A] transition-colors"
-                        title="What is this?"
-                      >
-                        <HelpCircle className="w-3.5 h-3.5" />
-                      </button>
-                    </p>
-                    {seedMode && (
-                      <span
-                        className="px-2 py-0.5 rounded-full seed-pill"
-                        style={{ fontSize: "0.65rem", color: "#8B5E3C", background: "rgba(255,255,255,0.55)", border: "1px solid rgba(160,113,74,0.18)" }}
-                      >
-                        {lang === "zh" ? "ON" : "ON"}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-muted-foreground/70" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
-                    {lang === "zh"
-                      ? "开启后，生成的场景图会自动带上商品的购物卡片截图"
-                      : "When on, generated scenes include the product shopping card snapshot"}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  aria-pressed={seedMode}
-                  onClick={() => {
-                    if (productInputMode === "image") {
-                      toast.info(t("trySeedModeImageWarning"), { duration: 4000 });
-                      return;
-                    }
-                    setSeedMode((v) => !v);
-                  }}
-                  className={`relative w-14 h-9 rounded-full flex-shrink-0 transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0714A]/30 ${productInputMode === "image" ? "opacity-40 cursor-not-allowed" : ""}`}
-                  style={{
-                    background: seedMode
-                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 55%, #FFCC66 110%)"
-                      : "rgba(139,94,60,0.18)",
-                    boxShadow: seedMode ? "0 10px 24px rgba(160,113,74,0.28)" : "inset 0 0 0 1px rgba(160,113,74,0.18)",
-                  }}
-                >
-                  <span
-                    className="absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 seed-shimmer"
-                    style={{ opacity: seedMode ? 1 : 0 }}
-                  />
-                  <span
-                    className="absolute top-1 left-1 w-7 h-7 rounded-full transition-transform duration-300 flex items-center justify-center"
-                    style={{
-                      transform: seedMode ? "translateX(20px)" : "translateX(0px)",
-                      background: "rgba(255,252,248,0.98)",
-                      boxShadow: seedMode ? "0 8px 16px rgba(44,31,20,0.22)" : "0 6px 12px rgba(44,31,20,0.14)",
-                    }}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
-                  </span>
-                </button>
-              </div>
-            </div>
-
             {/* ── Photo upload ── */}
             <div>
               <label className="block mb-2 text-muted-foreground" style={{ fontSize: "0.8rem", letterSpacing: "0.1em" }}>
@@ -1405,6 +1489,23 @@ export function TryItSection() {
               <div className="flex gap-1 p-1 rounded-xl mb-3" style={{ background: "rgba(237,229,216,0.35)" }}>
                 <button
                   type="button"
+                  onClick={() => handleProductModeSwitch("wardrobe")}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-200"
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: productInputMode === "wardrobe" ? 600 : 400,
+                    color: productInputMode === "wardrobe" ? "#FFFCF8" : "#8B5E3C",
+                    background: productInputMode === "wardrobe"
+                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 100%)"
+                      : "transparent",
+                    boxShadow: productInputMode === "wardrobe" ? "0 2px 8px rgba(139,94,60,0.18)" : "none",
+                  }}
+                >
+                  <Shirt className="w-3.5 h-3.5" />
+                  {lang === "zh" ? "衣橱模式" : "Wardrobe"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleProductModeSwitch("link")}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-200"
                   style={{
@@ -1438,6 +1539,69 @@ export function TryItSection() {
                   {t("tryProductModeImage")}
                 </button>
               </div>
+
+              {/* Wardrobe mode content */}
+              {productInputMode === "wardrobe" && (
+                <>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-muted-foreground/60" style={{ fontSize: "0.7rem" }}>
+                      {lang === "zh" ? "从我的衣橱选择商品，最多 5 件" : "Choose from wardrobe, up to 5 items"}
+                    </span>
+                    <span
+                      className="px-2 py-0.5 rounded-full"
+                      style={{
+                        fontSize: "0.65rem",
+                        color: "#A0714A",
+                        background: "rgba(160,113,74,0.08)",
+                      }}
+                    >
+                      {selectedWardrobeItemIds.length}/5
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-[#E8C3BA]/35 bg-white/70 p-3">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await loadWardrobeItems();
+                        setWardrobePickerDraftIds(selectedWardrobeItemIds);
+                        setWardrobePreviewId(selectedWardrobeItemIds[0] ?? wardrobeItems[0]?.id ?? null);
+                        setWardrobePickerOpen(true);
+                      }}
+                      className="mx-auto block px-4 py-2 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors"
+                      style={{ fontSize: "0.82rem" }}
+                    >
+                      {lang === "zh" ? "点击从衣橱选择" : "Select from wardrobe"}
+                    </button>
+                    {selectedWardrobeItemIds.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {selectedWardrobeProducts.map((it, idx) => (
+                          <div key={it.id} className="relative rounded-lg overflow-hidden border border-[#E8C3BA]/35 bg-white/60">
+                            <img src={it.product_image_url} alt={it.product_title || `Product ${idx + 1}`} className="w-full h-28 object-cover" />
+                            <div className="absolute inset-x-0 bottom-0 px-2 py-1 bg-black/35 backdrop-blur-sm">
+                              <p className="text-white/90 truncate" style={{ fontSize: "0.65rem" }}>
+                                {it.product_title || `Product ${idx + 1}`}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedWardrobeItemIds((prev) => prev.filter((x) => x !== it.id));
+                              }}
+                              className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/45 text-white/90 hover:text-red-300 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground/50 mt-3 text-center" style={{ fontSize: "0.72rem" }}>
+                        {lang === "zh" ? "尚未选择衣橱商品" : "No wardrobe products selected yet"}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Link mode content */}
               {productInputMode === "link" && (
@@ -1560,36 +1724,36 @@ export function TryItSection() {
                         background: "rgba(160,113,74,0.08)",
                       }}
                     >
-                      {productImageFiles.length}/5
+                      {effectiveProductPreviews.length}/5
                     </span>
                   </div>
                   <div
                     onClick={() => {
-                      if (productImageFiles.length < 5) {
+                      if (effectiveProductPreviews.length < 5) {
                         productImageInputRef.current?.click();
                       }
                     }}
                     className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer group ${
                       errors.link
                         ? "border-red-300 bg-red-50/20"
-                        : productImagePreviews.length > 0
+                        : effectiveProductPreviews.length > 0
                         ? "border-[#A0714A]/30 bg-[#A0714A]/5"
                         : "border-[#A0714A]/15 hover:border-[#A0714A]/35 bg-[rgba(237,229,216,0.2)] hover:bg-[rgba(237,229,216,0.35)]"
                     }`}
-                    style={{ minHeight: productImagePreviews.length > 0 ? "auto" : "140px" }}
+                    style={{ minHeight: effectiveProductPreviews.length > 0 ? "auto" : "140px" }}
                   >
-                    {productImagePreviews.length > 0 ? (
+                    {effectiveProductPreviews.length > 0 ? (
                       <div className="p-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {productImagePreviews.map((preview, idx) => (
+                          {effectiveProductPreviews.map((preview, idx) => (
                             <div
-                              key={`${productImageFiles[idx]?.name || "img"}-${idx}`}
+                              key={`${effectiveProductTitles[idx] || "img"}-${idx}`}
                               className="relative rounded-lg overflow-hidden border border-[#E8C3BA]/35 bg-white/60"
                             >
                               <img src={preview} alt={`Product ${idx + 1}`} className="w-full h-28 object-cover" />
                               <div className="absolute inset-x-0 bottom-0 px-2 py-1 bg-black/35 backdrop-blur-sm">
                                 <p className="text-white/90 truncate" style={{ fontSize: "0.65rem" }}>
-                                  {productImageFiles[idx]?.name}
+                                  {effectiveProductTitles[idx] || `Product ${idx + 1}`}
                                 </p>
                               </div>
                               <button
@@ -1607,7 +1771,7 @@ export function TryItSection() {
                         </div>
                         <button
                           type="button"
-                          disabled={productImageFiles.length >= 5}
+                          disabled={effectiveProductPreviews.length >= 5}
                           onClick={(e) => {
                             e.stopPropagation();
                             productImageInputRef.current?.click();
@@ -1617,7 +1781,7 @@ export function TryItSection() {
                         >
                           {lang === "zh" ? "继续添加图片" : "Add another image"}
                         </button>
-                        {productImageFiles.length >= 5 && (
+                        {effectiveProductPreviews.length >= 5 && (
                           <p className="text-amber-600 mt-2 flex items-center gap-1" style={{ fontSize: "0.72rem" }}>
                             <AlertCircle className="w-3 h-3" />
                             {t("tryLinkMax")}
@@ -1776,6 +1940,91 @@ export function TryItSection() {
               )}
             </div>
             )}
+
+            <div
+              className="rounded-2xl p-4 sm:p-5 transition-all duration-300"
+              style={{
+                background: seedMode
+                  ? "linear-gradient(135deg, rgba(160,113,74,0.14) 0%, rgba(255,204,102,0.10) 45%, rgba(139,94,60,0.10) 100%)"
+                  : "rgba(237,229,216,0.25)",
+                border: seedMode ? "1px solid rgba(160,113,74,0.22)" : "1px solid rgba(196,149,106,0.10)",
+                boxShadow: seedMode ? "0 10px 32px rgba(139,94,60,0.10)" : "0 2px 10px rgba(139,94,60,0.04)",
+              }}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className={`w-4 h-4 ${seedMode ? "seed-sparkle" : ""}`} style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
+                    <p className="font-medium flex items-center gap-1.5" style={{ color: "#5C3D24", fontSize: "0.88rem" }}>
+                      {lang === "zh" ? "种草模式" : "Seeding Mode"}
+                      {costConfig && costConfig.cost_seed_mode_extra > 0 && (
+                        <span className="text-[0.65rem] px-1.5 py-0.5 rounded-md bg-[#FAF6F0] text-[#A0714A] border border-[#A0714A]/20">
+                          +{costConfig.cost_seed_mode_extra} {t("profilePointsUnit")}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModeModalOpen(true);
+                        }}
+                        className="text-muted-foreground/50 hover:text-[#A0714A] transition-colors"
+                        title="What is this?"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </button>
+                    </p>
+                    {seedMode && (
+                      <span
+                        className="px-2 py-0.5 rounded-full seed-pill"
+                        style={{ fontSize: "0.65rem", color: "#8B5E3C", background: "rgba(255,255,255,0.55)", border: "1px solid rgba(160,113,74,0.18)" }}
+                      >
+                        {lang === "zh" ? "ON" : "ON"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-muted-foreground/70" style={{ fontSize: "0.76rem", lineHeight: 1.55 }}>
+                    {lang === "zh"
+                      ? "开启后，生成的场景图会自动带上商品的购物卡片截图"
+                      : "When on, generated scenes include the product shopping card snapshot"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  aria-pressed={seedMode}
+                  onClick={() => {
+                    if (productInputMode !== "link") {
+                      toast.info(t("trySeedModeImageWarning"), { duration: 4000 });
+                      return;
+                    }
+                    setSeedMode((v) => !v);
+                  }}
+                  className={`relative w-14 h-9 rounded-full flex-shrink-0 transition-all duration-300 outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A0714A]/30 ${productInputMode !== "link" ? "opacity-40 cursor-not-allowed" : ""}`}
+                  style={{
+                    background: seedMode
+                      ? "linear-gradient(135deg, #A0714A 0%, #8B5E3C 55%, #FFCC66 110%)"
+                      : "rgba(139,94,60,0.18)",
+                    boxShadow: seedMode ? "0 10px 24px rgba(160,113,74,0.28)" : "inset 0 0 0 1px rgba(160,113,74,0.18)",
+                  }}
+                >
+                  <span
+                    className="absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 seed-shimmer"
+                    style={{ opacity: seedMode ? 1 : 0 }}
+                  />
+                  <span
+                    className="absolute top-1 left-1 w-7 h-7 rounded-full transition-transform duration-300 flex items-center justify-center"
+                    style={{
+                      transform: seedMode ? "translateX(20px)" : "translateX(0px)",
+                      background: "rgba(255,252,248,0.98)",
+                      boxShadow: seedMode ? "0 8px 16px rgba(44,31,20,0.22)" : "0 6px 12px rgba(44,31,20,0.14)",
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: seedMode ? "#A0714A" : "rgba(139,94,60,0.55)" }} />
+                  </span>
+                </button>
+              </div>
+            </div>
 
             {/* ── Generate button ── */}
             <button
@@ -2162,6 +2411,110 @@ export function TryItSection() {
                     setModelPickerOpen(false);
                   }}
                   disabled={!modelPickerDraftId}
+                  className="px-5 py-2 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors disabled:opacity-50"
+                >
+                  {lang === "zh" ? "选定" : "Confirm"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {wardrobePickerOpen && (
+        <div className="fixed inset-0 z-[121] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setWardrobePickerOpen(false)} />
+          <div className="relative w-full max-w-4xl h-[76vh] rounded-2xl overflow-hidden bg-[#FDF9F4] border border-[#E8C3BA]/40 shadow-2xl flex">
+            <button
+              type="button"
+              onClick={() => setWardrobePickerOpen(false)}
+              className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-[38%] border-r border-[#E8C3BA]/30 bg-white/45 overflow-y-auto p-3">
+              <p className="text-xs text-muted-foreground mb-3">
+                {lang === "zh" ? "选择衣橱商品（可多选）" : "Choose wardrobe products (multi-select)"}
+              </p>
+              {loadingWardrobeItems ? (
+                <p className="text-sm text-muted-foreground">{lang === "zh" ? "加载中..." : "Loading..."}</p>
+              ) : (
+                <div className="space-y-2">
+                  {wardrobeItems.map((it) => {
+                    const checked = wardrobePickerDraftIds.includes(it.id);
+                    return (
+                      <button
+                        key={it.id}
+                        type="button"
+                        onClick={() => {
+                          setWardrobePreviewId(it.id);
+                          setWardrobePickerDraftIds((prev) => {
+                            if (prev.includes(it.id)) return prev.filter((x) => x !== it.id);
+                            if (prev.length >= 5) return prev;
+                            return [...prev, it.id];
+                          });
+                        }}
+                        className={`w-full p-2 rounded-xl border text-left transition-all ${
+                          checked ? "border-[#A0714A] bg-[#A0714A]/8" : "border-[#E8C3BA]/35 bg-white/70 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <img src={it.product_image_url} alt={it.product_title || "product"} className="w-14 h-16 rounded-lg object-cover flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-[#5C3D24] truncate">{it.product_title || (lang === "zh" ? "未命名商品" : "Untitled product")}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{it.category}</p>
+                          </div>
+                          {checked && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-[#A0714A] text-white">
+                              {lang === "zh" ? "已选" : "Selected"}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 p-4 flex flex-col">
+              <p className="text-xs text-muted-foreground mb-3">{lang === "zh" ? "大图预览" : "Large preview"}</p>
+              <div className="flex-1 rounded-xl border border-[#E8C3BA]/35 bg-white/65 overflow-hidden flex items-center justify-center">
+                {(() => {
+                  const draft = wardrobeItems.find((it) => it.id === wardrobePreviewId);
+                  if (!draft) {
+                    return (
+                      <p className="text-sm text-muted-foreground">
+                        {lang === "zh" ? "请先从左侧选择商品" : "Please pick one product from the left"}
+                      </p>
+                    );
+                  }
+                  return (
+                    <img
+                      src={draft.product_image_url}
+                      alt={draft.product_title || "product"}
+                      className="w-full h-full object-contain"
+                    />
+                  );
+                })()}
+              </div>
+              <div className="pt-3 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {lang === "zh" ? `已选择 ${wardrobePickerDraftIds.length}/5` : `${wardrobePickerDraftIds.length}/5 selected`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedWardrobeItemIds(wardrobePickerDraftIds);
+                    setProductImageFiles([]);
+                    setProductImagePreviews([]);
+                    setExternalProductImages([]);
+                    setExternalProductTitles([]);
+                    setErrors((prev) => ({ ...prev, link: undefined }));
+                    setWardrobePickerOpen(false);
+                  }}
+                  disabled={wardrobePickerDraftIds.length === 0}
                   className="px-5 py-2 rounded-xl bg-[#A0714A] text-white hover:bg-[#8B5E3C] transition-colors disabled:opacity-50"
                 >
                   {lang === "zh" ? "选定" : "Confirm"}

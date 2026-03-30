@@ -270,6 +270,16 @@ type CommunityFeedItem = {
   generated_images?: string[];
   product_images?: string[];
   product_titles?: string[];
+  product_links?: Array<{
+    url?: string;
+    title?: string;
+    selected_image?: string;
+    platform?: string;
+    shop_name?: string;
+    price?: string;
+    currency?: string;
+  }>;
+  product_input_mode?: "link" | "image";
   content: string;
   generated_copy?: string;
   scene_description?: string;
@@ -1029,6 +1039,16 @@ type TimelineItem = {
   images: string[];
   productImages: string[];
   productTitles: string[];
+  productLinks?: Array<{
+    url: string;
+    title: string;
+    selected_image: string;
+    platform: string;
+    shop_name: string;
+    price: string;
+    currency: string;
+  }>;
+  productInputMode?: "link" | "image";
   mode: "copy" | "inspire";
 };
 
@@ -1065,6 +1085,18 @@ function toTimelineItem(item: CommunityFeedItem, lang: string): TimelineItem {
     images: item.generated_images && item.generated_images.length > 0 ? item.generated_images : [item.cover_image],
     productImages: item.product_images || [],
     productTitles: item.product_titles || [],
+    productLinks: Array.isArray(item.product_links)
+      ? item.product_links.map((l) => ({
+          url: l?.url || "",
+          title: l?.title || "",
+          selected_image: l?.selected_image || "",
+          platform: l?.platform || "",
+          shop_name: l?.shop_name || "",
+          price: l?.price || "",
+          currency: l?.currency || "",
+        }))
+      : [],
+    productInputMode: item.product_input_mode === "link" ? "link" : "image",
     mode: item.mode === "copy" ? "copy" : "inspire",
   };
 }
@@ -1519,7 +1551,20 @@ export function CommunityPage() {
                     : ct.addAllWardrobe}
                 </button>
                 <button
-                  onClick={() => navigate("/try")}
+                  onClick={() =>
+                    navigate("/try", {
+                      state: {
+                        communityPrefill: {
+                          generationId: selectedTimelineItem.generationId,
+                          mode: selectedTimelineItem.mode,
+                          productInputMode: selectedTimelineItem.productInputMode || "image",
+                          productImages: selectedTimelineItem.productImages || [],
+                          productTitles: selectedTimelineItem.productTitles || [],
+                          productLinks: selectedTimelineItem.productLinks || [],
+                        },
+                      },
+                    })
+                  }
                   className="w-full py-3 rounded-xl border border-[#A0714A] text-[#A0714A] font-medium hover:bg-[#A0714A]/5 transition-colors flex items-center justify-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />

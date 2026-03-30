@@ -28,6 +28,8 @@ export function WardrobePage() {
   });
   const [newCategory, setNewCategory] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
+  const [dropTargetCategory, setDropTargetCategory] = useState<string | null>(null);
 
   const mapCategoryLabel = (name: string) => {
     if (name === "dress") return t("wardrobeCategoryDress");
@@ -157,6 +159,40 @@ export function WardrobePage() {
     }
   };
 
+  const moveItemToCategory = async (itemId: number, targetCategory: string) => {
+    const tk = token();
+    if (!tk) return;
+    const current = items.find((it) => it.id === itemId);
+    if (!current || current.category === targetCategory) return;
+    const prevItems = items;
+    setItems((prev) =>
+      prev.map((it) => (it.id === itemId ? { ...it, category: targetCategory } : it)),
+    );
+    try {
+      const res = await fetch(`${API_BASE}/wardrobe/items/${itemId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tk}`,
+        },
+        body: JSON.stringify({ category: targetCategory }),
+      });
+      if (res.status === 401) {
+        window.dispatchEvent(new Event("scenew:unauthorized"));
+        setItems(prevItems);
+        return;
+      }
+      if (!res.ok) {
+        setItems(prevItems);
+        throw new Error("failed");
+      }
+      setOpenMap((prev) => ({ ...prev, [targetCategory]: true }));
+    } catch {
+      toast.error(t("wardrobeAddFailed"));
+      setItems(prevItems);
+    }
+  };
+
   return (
     <section className="relative min-h-screen pt-32 pb-24 px-6">
       <div className="max-w-3xl mx-auto">
@@ -222,6 +258,23 @@ export function WardrobePage() {
                   border: "1px solid rgba(196,149,106,0.12)",
                   boxShadow: "0 2px 8px rgba(139,94,60,0.03)",
                 }}
+                onDragOver={(e) => {
+                  if (draggingItemId !== null) {
+                    e.preventDefault();
+                    setDropTargetCategory(cat.name);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dropTargetCategory === cat.name) setDropTargetCategory(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggingItemId !== null) {
+                    moveItemToCategory(draggingItemId, cat.name);
+                  }
+                  setDraggingItemId(null);
+                  setDropTargetCategory(null);
+                }}
               >
                 <button
                   type="button"
@@ -263,7 +316,11 @@ export function WardrobePage() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-5 pb-5 pt-1">
+                    <div
+                      className={`px-5 pb-5 pt-1 rounded-b-xl transition-colors ${
+                        dropTargetCategory === cat.name ? "bg-[#A0714A]/8" : ""
+                      }`}
+                    >
                       {loading ? (
                         <div className="rounded-lg p-6 flex items-center justify-center text-muted-foreground gap-2">
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -280,7 +337,15 @@ export function WardrobePage() {
                           {list.map((item) => (
                             <div
                               key={item.id}
-                              className="rounded-lg overflow-hidden border border-[#E8C3BA]/30 bg-white"
+                              className={`rounded-lg overflow-hidden border bg-white ${
+                                draggingItemId === item.id ? "border-[#A0714A]" : "border-[#E8C3BA]/30"
+                              }`}
+                              draggable
+                              onDragStart={() => setDraggingItemId(item.id)}
+                              onDragEnd={() => {
+                                setDraggingItemId(null);
+                                setDropTargetCategory(null);
+                              }}
                             >
                               <div className="aspect-square bg-[#faf6f0]">
                                 <img
