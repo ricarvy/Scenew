@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Typed from "typed.js";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Users } from "lucide-react";
 import { useI18n } from "./I18nContext";
 import { GlowOrb } from "./WarmGlow";
 import { useNavigate } from "react-router";
@@ -133,6 +133,26 @@ export function HeroSection() {
                   "linear-gradient(135deg, #B0815A 0%, #9B6E4C 50%, #8B5E3C 100%)",
               }}
             />
+          </button>
+          <button
+            onClick={() => navigate("/community")}
+            className="px-8 py-3.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 relative overflow-hidden group"
+            style={{
+              fontSize: "0.95rem",
+              letterSpacing: "0.05em",
+              background: "rgba(237,229,216,0.5)",
+              border: "1px solid rgba(196,149,106,0.25)",
+              boxShadow: "0 4px 16px rgba(139,94,60,0.08)",
+            }}
+          >
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{ background: "rgba(237,229,216,0.8)" }}
+            />
+            <span className="relative z-10 flex items-center gap-2 font-medium text-[#5C3D24]">
+              <Users className="w-4 h-4" />
+              {t("heroCommunity")}
+            </span>
           </button>
           <button
             onClick={() => {
