@@ -23,6 +23,7 @@ type GlobeDistributionPoint = {
   userId?: number;
   avatarUrl?: string;
   latestItem?: CommunityFeedItem;
+  heightOffset?: number;
 };
 
 type GlobeMarkerNode = {
@@ -266,6 +267,9 @@ type CommunityFeedItem = {
   published_at?: string | null;
   user_name: string;
   user_avatar?: string | null;
+  user_city?: string | null;
+  user_latitude?: number | null;
+  user_longitude?: number | null;
   cover_image: string;
   generated_images?: string[];
   product_images?: string[];
@@ -504,18 +508,36 @@ function buildGlobeDistribution(feedData: CommunityFeedItem[], lang: string, api
   const locationMap = new Map<string, GlobeDistributionPoint>();
   feedData.forEach((item) => {
     const stableUserKey = item.user_name || `user-${item.id}`;
-    const seed = hashString(`${stableUserKey}-${item.generation_id}`);
-    const idx = seed % USER_LOCATIONS.length;
-    const loc = USER_LOCATIONS[idx];
+
+    const hasRealGeo =
+      item.user_latitude != null &&
+      item.user_longitude != null &&
+      item.user_latitude !== 0 &&
+      item.user_longitude !== 0;
+
+    let lon: number;
+    let lat: number;
+
+    if (hasRealGeo) {
+      lon = item.user_longitude!;
+      lat = item.user_latitude!;
+    } else {
+      const seed = hashString(`${stableUserKey}-${item.generation_id}`);
+      const idx = seed % USER_LOCATIONS.length;
+      const loc = USER_LOCATIONS[idx];
+      lon = loc.lon;
+      lat = loc.lat;
+    }
+
     const existing = locationMap.get(stableUserKey);
     if (existing) {
       existing.weight += 1;
       return;
     }
     locationMap.set(stableUserKey, {
-      key: `${stableUserKey}-${idx}`,
-      lon: loc.lon,
-      lat: loc.lat,
+      key: `${stableUserKey}-${lon.toFixed(1)}-${lat.toFixed(1)}`,
+      lon,
+      lat,
       weight: 1,
       label: item.user_name || (lang === "zh" ? "社区用户" : "Community User"),
       userId: item.user_id,
@@ -524,9 +546,61 @@ function buildGlobeDistribution(feedData: CommunityFeedItem[], lang: string, api
     });
   });
 
-  return Array.from(locationMap.values())
+  const sorted = Array.from(locationMap.values())
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 26);
+
+  return spreadOverlappingMarkers(sorted);
+}
+
+/**
+ * Detect markers that are very close (same city) and spread them apart
+ * with angular offsets around the original location + height differences
+ * so they don't visually overlap on the globe.
+ */
+function spreadOverlappingMarkers(points: GlobeDistributionPoint[]): GlobeDistributionPoint[] {
+  const PROXIMITY_DEG = 2.5;
+  const clusters: GlobeDistributionPoint[][] = [];
+  const assigned = new Set<number>();
+
+  for (let i = 0; i < points.length; i++) {
+    if (assigned.has(i)) continue;
+    const cluster: GlobeDistributionPoint[] = [points[i]];
+    assigned.add(i);
+    for (let j = i + 1; j < points.length; j++) {
+      if (assigned.has(j)) continue;
+      const dLat = Math.abs(points[i].lat - points[j].lat);
+      const dLon = Math.abs(points[i].lon - points[j].lon);
+      if (dLat < PROXIMITY_DEG && dLon < PROXIMITY_DEG) {
+        cluster.push(points[j]);
+        assigned.add(j);
+      }
+    }
+    clusters.push(cluster);
+  }
+
+  const result: GlobeDistributionPoint[] = [];
+  for (const cluster of clusters) {
+    if (cluster.length === 1) {
+      cluster[0].heightOffset = 0;
+      result.push(cluster[0]);
+      continue;
+    }
+    const centerLat = cluster.reduce((s, p) => s + p.lat, 0) / cluster.length;
+    const centerLon = cluster.reduce((s, p) => s + p.lon, 0) / cluster.length;
+    const SPREAD_DEG = 3.5;
+    const HEIGHT_STEP = 0.12;
+
+    cluster.forEach((point, idx) => {
+      const angle = (idx / cluster.length) * Math.PI * 2;
+      const ringRadius = SPREAD_DEG * (0.5 + 0.5 * Math.ceil(idx / 6));
+      point.lat = centerLat + Math.sin(angle) * ringRadius;
+      point.lon = centerLon + Math.cos(angle) * ringRadius;
+      point.heightOffset = idx * HEIGHT_STEP;
+    });
+    result.push(...cluster);
+  }
+  return result;
 }
 
 function WorldMapPanel({
@@ -751,11 +825,12 @@ function WorldMapPanel({
     const maxWeight = Math.max(...points.map((item) => item.weight), 1);
     const buildAvatarMarker = (point: GlobeDistributionPoint, idx: number, avatarTexture?: THREE.Texture) => {
       const intensity = point.weight / maxWeight;
+      const heightExtra = point.heightOffset ?? 0;
       const normal = latLonToVector3(point.lat, point.lon, 1).normalize();
 
       const nodeGroup = new THREE.Group();
       nodeGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
-      nodeGroup.position.copy(normal.clone().multiplyScalar(GLOBE_RADIUS + 0.01));
+      nodeGroup.position.copy(normal.clone().multiplyScalar(GLOBE_RADIUS + 0.01 + heightExtra));
       const pulseMaterial = new THREE.SpriteMaterial({
         map: pulseTexture || undefined,
         color: new THREE.Color("#ffcb79"),
@@ -836,7 +911,7 @@ function WorldMapPanel({
       markerNodes.push({
         group: nodeGroup,
         normal,
-        baseRadius: GLOBE_RADIUS + 0.01,
+        baseRadius: GLOBE_RADIUS + 0.01 + heightExtra,
         floatAmplitude: 0.02 + intensity * 0.03,
         floatSpeed: 0.8 + intensity * 1.1,
         phase: (idx / Math.max(points.length, 1)) * Math.PI * 2,
