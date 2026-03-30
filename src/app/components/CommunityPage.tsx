@@ -533,12 +533,10 @@ function WorldMapPanel({
   lang,
   points,
   onOpenDetail,
-  onOpenProfile,
 }: {
   lang: string;
   points: GlobeDistributionPoint[];
   onOpenDetail: (item: CommunityFeedItem) => void;
-  onOpenProfile: (userId: number) => void;
 }) {
   const ct = COMMUNITY_TEXTS[(lang as keyof typeof COMMUNITY_TEXTS)] || COMMUNITY_TEXTS.en;
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -916,9 +914,7 @@ function WorldMapPanel({
         markerUserId?: number;
         markerPost?: CommunityFeedItem;
       };
-      if (data.markerUserId) {
-        onOpenProfile(data.markerUserId);
-      } else if (data.markerPost) {
+      if (data.markerPost) {
         onOpenDetail(data.markerPost);
       }
     };
@@ -990,7 +986,7 @@ function WorldMapPanel({
         mount.removeChild(renderer.domElement);
       }
     };
-  }, [points, lang, onOpenDetail, onOpenProfile, ct.userPlaceholder]);
+  }, [points, lang, onOpenDetail, ct.userPlaceholder]);
 
   return (
     <div
@@ -1434,7 +1430,6 @@ export function CommunityPage() {
               lang={lang}
               points={globePoints}
               onOpenDetail={(item) => setSelectedTimelineItem(toTimelineItem(item, lang))}
-              onOpenProfile={(userId) => openUserProfileModal(userId)}
             />
           )}
         </div>
