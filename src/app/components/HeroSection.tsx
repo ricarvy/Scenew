@@ -112,20 +112,24 @@ export function HeroSection() {
           <span ref={subtitleRef} />
         </p>
 
-        <div className="mt-14 flex flex-col sm:flex-row gap-4 justify-center items-center relative">
+        <div className="mt-14 flex flex-col items-center gap-5 relative">
           <button
             onClick={() => navigate("/try")}
-            className="px-8 py-3.5 rounded-full transition-all duration-300 hover:scale-105 text-primary-foreground relative overflow-hidden group"
+            className="px-14 py-5 rounded-full transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] text-primary-foreground relative overflow-hidden group"
             style={{
-              fontSize: "0.95rem",
-              letterSpacing: "0.05em",
+              fontSize: "1.15rem",
+              fontWeight: 600,
+              letterSpacing: "0.08em",
               background:
                 "linear-gradient(135deg, #A0714A 0%, #8B5E3C 50%, #7A5030 100%)",
               boxShadow:
-                "0 8px 32px rgba(139,94,60,0.25), 0 2px 8px rgba(139,94,60,0.15)",
+                "0 12px 40px rgba(139,94,60,0.3), 0 4px 12px rgba(139,94,60,0.2)",
             }}
           >
-            <span className="relative z-10">{t("heroStart")}</span>
+            <span className="relative z-10 flex items-center gap-2.5">
+              <ArrowDown className="w-5 h-5 rotate-[-90deg]" />
+              {t("heroStart")}
+            </span>
             <div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               style={{
@@ -133,57 +137,59 @@ export function HeroSection() {
                   "linear-gradient(135deg, #B0815A 0%, #9B6E4C 50%, #8B5E3C 100%)",
               }}
             />
-          </button>
-          <button
-            onClick={() => navigate("/community")}
-            className="px-8 py-3.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 relative overflow-hidden group"
-            style={{
-              fontSize: "0.95rem",
-              letterSpacing: "0.05em",
-              background: "rgba(237,229,216,0.5)",
-              border: "1px solid rgba(196,149,106,0.25)",
-              boxShadow: "0 4px 16px rgba(139,94,60,0.08)",
-            }}
-          >
             <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ background: "rgba(237,229,216,0.8)" }}
+              className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{ boxShadow: "0 0 30px rgba(160,113,74,0.4), 0 0 60px rgba(160,113,74,0.15)" }}
             />
-            <span className="relative z-10 flex items-center gap-2 font-medium text-[#5C3D24]">
-              <Users className="w-4 h-4" />
-              {t("heroCommunity")}
-            </span>
           </button>
-          <button
-            onClick={() => {
-              if (user) {
-                setRedeemOpen(true);
-              } else {
-                setLoginOpen(true);
-              }
-            }}
-            className="group relative px-8 py-3.5 rounded-full text-foreground transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
-            style={{
-              fontSize: "0.95rem",
-              letterSpacing: "0.05em",
-              background: "rgba(255,240,245,0.4)", // Light pink base
-              border: "1px solid rgba(232, 195, 186, 0.4)",
-              boxShadow: "0 0 20px rgba(232, 195, 186, 0.3), inset 0 0 10px rgba(255,255,255,0.5)"
-            }}
-          >
-            {/* Inner flowing gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#E8C3BA]/40 to-transparent w-[200%] h-full animate-[shimmer_3s_infinite] -skew-x-12" />
-            
-            {/* Pink glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#F472B6]/20 via-[#E8C3BA]/30 to-[#F472B6]/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
-            {/* Sparkles */}
-            <span className="relative z-10 flex items-center gap-2 font-medium text-[#5C3D24]">
-              <span className="animate-pulse text-[#D4AF37]">✨</span>
-              {t("heroRedeem")}
-              <span className="animate-pulse text-[#D4AF37]" style={{ animationDelay: "0.5s" }}>✨</span>
-            </span>
-          </button>
+
+          <div className="flex flex-row gap-3 justify-center items-center">
+            <button
+              onClick={() => navigate("/community")}
+              className="px-6 py-2.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 relative overflow-hidden group"
+              style={{
+                fontSize: "0.85rem",
+                letterSpacing: "0.04em",
+                background: "rgba(237,229,216,0.5)",
+                border: "1px solid rgba(196,149,106,0.25)",
+                boxShadow: "0 4px 16px rgba(139,94,60,0.08)",
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: "rgba(237,229,216,0.8)" }}
+              />
+              <span className="relative z-10 flex items-center gap-1.5 font-medium text-[#5C3D24]">
+                <Users className="w-3.5 h-3.5" />
+                {t("heroCommunity")}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                if (user) {
+                  setRedeemOpen(true);
+                } else {
+                  setLoginOpen(true);
+                }
+              }}
+              className="group relative px-6 py-2.5 rounded-full text-foreground transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
+              style={{
+                fontSize: "0.85rem",
+                letterSpacing: "0.04em",
+                background: "rgba(255,240,245,0.4)",
+                border: "1px solid rgba(232, 195, 186, 0.4)",
+                boxShadow: "0 0 20px rgba(232, 195, 186, 0.3), inset 0 0 10px rgba(255,255,255,0.5)",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#E8C3BA]/40 to-transparent w-[200%] h-full animate-[shimmer_3s_infinite] -skew-x-12" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#F472B6]/20 via-[#E8C3BA]/30 to-[#F472B6]/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <span className="relative z-10 flex items-center gap-1.5 font-medium text-[#5C3D24]">
+                <span className="animate-pulse text-[#D4AF37]">✨</span>
+                {t("heroRedeem")}
+                <span className="animate-pulse text-[#D4AF37]" style={{ animationDelay: "0.5s" }}>✨</span>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
